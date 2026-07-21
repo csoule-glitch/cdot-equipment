@@ -274,6 +274,7 @@ const IT_SPREADSHEET_ID = "1KvPby9zvMLaaH1n0e2hku0NxVq7Q7NB9UimWwrZDS_s";
 const AUTOMATION_SPREADSHEET_ID = "1j_N8SbLk81t4gy7eBik4GvXTKjZlpYBgtlOHC3hbUsE";
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.email";
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
+const TOKEN_REFRESH_BUFFER_MS = 5 * 60 * 1000;
 const MAX_TABLE_COLUMNS = 6;
 const EXCLUDED_COLUMNS = ['username', 'password', 'operational unit (mother asset tag)'];
 const TABLE_EXCLUDE_PATTERNS = [/^checked$/i];
@@ -291,7 +292,7 @@ const COMPUTED_EXPORT_FIELDS = [
   'Cellario Name (Automation Sheet)', 'System/Location (Automation Sheet)', 'Operating System (Automation Sheet)'
 ];
 
-let accessToken = null, tokenClient = null, sheetTitle = null;
+let accessToken = null, tokenClient = null, sheetTitle = null, hasSignedInOnce = false, tokenRefreshTimer = null;
 let rows = [], headers = [], filters = {}, categoricalCols = [], primaryCols = [];
 let sortState = { col: null, dir: 1 };
 let expandedIndex = null, searchTerm = '', legendItems = [];
@@ -419,13 +420,24 @@ window.onload = () => {
 function initGSI(){
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID, scope: SCOPES,
-    callback: (resp) => { if (resp.error){ showGateError('Sign-in failed: ' + resp.error); return; } accessToken = resp.access_token; onSignedIn(); },
+    callback: (resp) => {
+      if (resp.error){ showGateError('Sign-in failed: ' + resp.error); return; }
+      accessToken = resp.access_token;
+      scheduleTokenRefresh(resp.expires_in);
+      if (!hasSignedInOnce){ hasSignedInOnce = true; onSignedIn(); }
+    },
   });
   const btn = document.createElement('button');
   btn.className = 'refresh-btn'; btn.style.padding = '12px 24px'; btn.style.fontSize = '13.5px';
   btn.textContent = 'Sign in with Google';
   btn.addEventListener('click', () => tokenClient.requestAccessToken({ prompt: 'consent' }));
   document.getElementById('gsiButtonContainer').appendChild(btn);
+}
+function scheduleTokenRefresh(expiresInSeconds){
+  if (tokenRefreshTimer) clearTimeout(tokenRefreshTimer);
+  const expiresInMs = (parseInt(expiresInSeconds, 10) || 3600) * 1000;
+  const refreshInMs = Math.max(expiresInMs - TOKEN_REFRESH_BUFFER_MS, 30 * 1000);
+  tokenRefreshTimer = setTimeout(() => { tokenClient.requestAccessToken({ prompt: '' }); }, refreshInMs);
 }
 function showGateError(msg){ els.gateError.textContent = msg; els.gateError.classList.remove('hidden'); }
 async function onSignedIn(){
@@ -435,7 +447,7 @@ async function onSignedIn(){
     if (userinfo && userinfo.email) els.whoami.textContent = 'Signed in as ' + userinfo.email;
   } catch(e) {}
   loadData();
-  setInterval(() => tokenClient.requestAccessToken({ prompt: '' }), AUTO_REFRESH_MS);
+  setInterval(loadData, AUTO_REFRESH_MS);
 }
 async function sheetsApiFetch(spreadsheetId, path){
   const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + spreadsheetId + path, { headers: { Authorization: 'Bearer ' + accessToken } });
@@ -943,7 +955,8 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('refreshBtn').addEventListener('click', loadData);
   document.getElementById('signoutBtn').addEventListener('click', () => {
     if (accessToken) google.accounts.oauth2.revoke(accessToken, () => {});
-    accessToken = null; sheetTitle = null; rows = []; headers = [];
+    if (tokenRefreshTimer) clearTimeout(tokenRefreshTimer);
+    accessToken = null; sheetTitle = null; rows = []; headers = []; hasSignedInOnce = false;
     document.getElementById('app').classList.add('hidden');
     document.getElementById('gate').classList.remove('hidden');
     document.getElementById('gateError').classList.add('hidden');

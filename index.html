@@ -6,87 +6,149 @@
 <title>CDoT Equipment Registry</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,400;0,9..144,600;1,9..144,500&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
 <style>
   :root{
-    --ink:#1B2430; --ink-soft:#2A3541; --paper:#ECE7D8; --paper-dim:#E1DBC7;
-    --paper-line:rgba(27,36,48,0.14); --amber:#C98A2C; --amber-soft:#E4B25A;
-    --teal:#3E6259; --rust:#8E3B2F; --text:#232B2B; --text-muted:#5B6360;
+    --paper:#F5F2EC; --surface:#FFFFFF; --line:rgba(32,36,43,0.12); --line-soft:rgba(32,36,43,0.07);
+    --ink:#20242B; --ink-soft:#3A3F47; --muted:#7A7D76;
+    --accent:#33513F; --accent-soft:#5C7A68;
+    --brick:#8B4A42; --brass:#A8823D;
   }
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
-  body{background:var(--paper); color:var(--text); font-family:'IBM Plex Sans', sans-serif; -webkit-font-smoothing:antialiased;}
-  .wrap{max-width:1180px; margin:0 auto; padding:40px 24px 80px;}
-  .header{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:20px; border-bottom:2px solid var(--ink); padding-bottom:20px; margin-bottom:20px;}
-  .eyebrow{font-family:'IBM Plex Mono', monospace; font-size:11px; letter-spacing:0.16em; text-transform:uppercase; color:var(--teal); margin:0 0 6px;}
-  .title{font-family:'Fraunces', serif; font-weight:600; font-size:40px; line-height:1.02; margin:0; color:var(--ink);}
-  .title em{font-style:italic; font-weight:500; color:var(--amber);}
-  .stats-line{font-family:'IBM Plex Mono', monospace; font-size:13px; color:var(--text-muted); margin-top:8px;}
-  .sync-block{display:flex; align-items:center; gap:12px; font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-muted); flex-wrap:wrap;}
-  .dot{width:8px;height:8px;border-radius:50%; background:var(--teal); box-shadow:0 0 0 0 rgba(62,98,89,0.6); animation:pulse 2.2s infinite; flex-shrink:0;}
-  .dot.error{background:var(--rust); box-shadow:none; animation:none;}
-  @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(62,98,89,0.45);} 70%{box-shadow:0 0 0 6px rgba(62,98,89,0);} 100%{box-shadow:0 0 0 0 rgba(62,98,89,0);}}
-  .refresh-btn, .signout-btn{font-family:'IBM Plex Mono', monospace; font-size:12px; letter-spacing:0.04em; background:var(--ink); color:var(--paper); border:none; padding:8px 14px; border-radius:2px; cursor:pointer; transition:background 0.15s ease;}
-  .signout-btn{background:transparent; color:var(--rust); border:1px solid var(--rust);}
-  .refresh-btn:hover{background:var(--ink-soft);}
-  .signout-btn:hover{background:rgba(142,59,47,0.08);}
-  .refresh-btn:focus-visible, .chip:focus-visible, .search-input:focus-visible, th button:focus-visible, .legend-toggle:focus-visible, .signout-btn:focus-visible{outline:2px solid var(--amber); outline-offset:2px;}
-  .gate{min-height:60vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:18px; padding:60px 20px;}
-  .gate .title{font-size:34px;}
-  .gate p{max-width:480px; color:var(--text-muted); font-size:14px; line-height:1.6;}
-  #gsiButtonContainer{margin-top:6px;}
-  .gate-error{color:var(--rust); font-family:'IBM Plex Mono', monospace; font-size:13px; max-width:480px; border:1px solid var(--rust); padding:12px 16px; background:rgba(142,59,47,0.06);}
-  .security-note{font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--teal); background:rgba(62,98,89,0.08); border:1px solid var(--teal); padding:8px 12px; border-radius:2px; margin-bottom:20px;}
-  .legend-block{margin-bottom:22px; border:1px solid var(--ink);}
-  .legend-toggle{width:100%; display:flex; justify-content:space-between; align-items:center; background:var(--ink); color:var(--paper); border:none; font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.1em; padding:10px 14px; cursor:pointer;}
-  .legend-body{display:none; padding:16px 18px; background:var(--paper-dim); font-size:13px; line-height:1.6;}
+  body{background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans', sans-serif; -webkit-font-smoothing:antialiased; font-weight:400;}
+  .wrap{max-width:1140px; margin:0 auto; padding:56px 28px 90px;}
+
+  .header{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:20px; border-bottom:1px solid var(--line); padding-bottom:28px; margin-bottom:32px;}
+  .eyebrow{font-family:'IBM Plex Sans', sans-serif; font-size:12px; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); margin:0 0 10px;}
+  .title{font-family:'Fraunces', serif; font-weight:400; font-size:38px; line-height:1.08; margin:0; color:var(--ink); letter-spacing:-0.01em;}
+  .title em{font-style:italic; font-weight:400; color:var(--accent);}
+  .stats-line{font-family:'IBM Plex Sans', sans-serif; font-size:13px; color:var(--muted); margin-top:10px;}
+  .sync-block{display:flex; align-items:center; gap:14px; font-size:12.5px; color:var(--muted); flex-wrap:wrap;}
+  .dot{width:6px;height:6px;border-radius:50%; background:var(--accent-soft); flex-shrink:0;}
+  .dot.error{background:var(--brick);}
+  .refresh-btn, .signout-btn{
+    font-family:'IBM Plex Sans', sans-serif; font-size:12.5px; font-weight:500;
+    background:transparent; color:var(--ink); border:1px solid var(--line);
+    padding:8px 18px; border-radius:999px; cursor:pointer; transition:all 0.15s ease;
+  }
+  .refresh-btn:hover{background:var(--surface); border-color:var(--ink-soft);}
+  .signout-btn{color:var(--brick); border-color:rgba(139,74,66,0.35);}
+  .signout-btn:hover{background:rgba(139,74,66,0.06);}
+  .refresh-btn:focus-visible, .chip:focus-visible, .search-input:focus-visible, th button:focus-visible, .legend-toggle:focus-visible, .signout-btn:focus-visible{
+    outline:2px solid var(--accent-soft); outline-offset:2px;
+  }
+
+  .gate{min-height:60vh; display:flex; flex-direction:column; align-items:center; justify-content:center; text-align:center; gap:20px; padding:60px 20px;}
+  .gate .title{font-size:32px;}
+  .gate p{max-width:460px; color:var(--muted); font-size:14.5px; line-height:1.7;}
+  #gsiButtonContainer{margin-top:8px;}
+  .gate-error{color:var(--brick); font-size:13px; max-width:460px; border:1px solid rgba(139,74,66,0.3); padding:12px 18px; border-radius:8px; background:rgba(139,74,66,0.05);}
+
+  .security-note{font-size:12px; color:var(--accent-soft); background:rgba(51,81,63,0.06); border:1px solid rgba(51,81,63,0.18); padding:10px 16px; border-radius:8px; margin-bottom:24px;}
+
+  .legend-block{margin-bottom:26px; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
+  .legend-toggle{
+    width:100%; display:flex; justify-content:space-between; align-items:center;
+    background:var(--surface); color:var(--ink); border:none;
+    font-size:12.5px; font-weight:500; letter-spacing:0.04em; padding:14px 18px; cursor:pointer;
+  }
+  .legend-body{display:none; padding:18px 20px; background:var(--surface); border-top:1px solid var(--line); font-size:13.5px; line-height:1.7; color:var(--ink-soft);}
   .legend-body.open{display:block;}
   .legend-body ul{margin:0; padding-left:18px;}
-  .legend-body li{margin-bottom:4px;}
-  .search-row{margin-bottom:18px;}
-  .search-input{width:100%; font-family:'Fraunces', serif; font-style:italic; font-size:20px; background:transparent; border:none; border-bottom:1.5px solid var(--ink); padding:8px 2px 10px; color:var(--ink);}
-  .search-input::placeholder{color:var(--text-muted); opacity:0.8;}
-  .filters{display:flex; flex-direction:column; gap:10px; margin:18px 0 22px;}
-  .filter-group{display:flex; align-items:baseline; gap:10px; flex-wrap:wrap;}
-  .filter-label{font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.1em; color:var(--text-muted); min-width:140px;}
-  .chip-row{display:flex; gap:6px; flex-wrap:wrap;}
-  .chip{font-family:'IBM Plex Mono', monospace; font-size:12px; padding:4px 10px; border:1px solid var(--ink); background:transparent; color:var(--ink); border-radius:2px; cursor:pointer; transition:all 0.12s ease;}
-  .chip:hover{background:rgba(27,36,48,0.06);}
-  .chip.active{background:var(--ink); color:var(--paper);}
-  .clear-filters{font-family:'IBM Plex Mono', monospace; font-size:11px; color:var(--rust); background:none; border:none; text-decoration:underline; cursor:pointer; padding:0;}
-  .results-line{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--text-muted); margin-bottom:10px;}
-  .table-scroll{overflow-x:auto; border:1px solid var(--ink);}
+  .legend-body li{margin-bottom:5px;}
+
+  .search-row{margin-bottom:22px;}
+  .search-input{
+    width:100%; font-family:'Fraunces', serif; font-style:italic; font-weight:400; font-size:21px;
+    background:transparent; border:none; border-bottom:1px solid var(--line);
+    padding:10px 2px 14px; color:var(--ink);
+  }
+  .search-input::placeholder{color:var(--muted); opacity:0.85;}
+
+  .risk-block{margin-bottom:22px; border:1px solid var(--line); border-radius:10px; padding:18px 20px; background:var(--surface);}
+  .risk-block .filter-label{margin-bottom:12px; display:block;}
+  .risk-chip-row{display:flex; gap:10px; flex-wrap:wrap;}
+  .risk-chip{
+    font-family:'IBM Plex Sans', sans-serif; font-size:13px; font-weight:500;
+    padding:7px 16px; border-radius:999px; cursor:pointer; border:1px solid var(--line);
+    background:transparent; color:var(--ink-soft); transition:all 0.15s ease;
+  }
+  .risk-chip:hover{border-color:var(--ink-soft);}
+  .risk-chip.active{color:#fff !important;}
+  .risk-chip[data-level="high"].active{background:var(--brick); border-color:var(--brick);}
+  .risk-chip[data-level="moderate"].active{background:var(--brass); border-color:var(--brass);}
+  .risk-chip[data-level="low"].active{background:var(--accent); border-color:var(--accent);}
+  .risk-chip[data-level="other"].active{background:var(--muted); border-color:var(--muted);}
+
+  .age-block{margin-bottom:22px; border:1px solid var(--line); border-radius:10px; padding:18px 20px; background:var(--surface);}
+  .age-block .filter-label{display:block; margin-bottom:14px;}
+  .age-slider-row{display:flex; gap:30px; flex-wrap:wrap; margin-bottom:14px;}
+  .age-slider-item{display:flex; align-items:center; gap:12px; font-size:12.5px; color:var(--muted);}
+  .age-slider-item input[type="range"]{width:180px; accent-color:var(--accent);}
+  .age-slider-item span{min-width:32px; color:var(--ink); font-weight:500;}
+  .age-unknown-toggle{font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:8px;}
+  .age-unknown-toggle input{accent-color:var(--accent);}
+  .age-estimated-tag{font-size:11px; color:var(--brass); font-style:italic;}
+
+  .tier-legend{font-size:12px; color:var(--muted); margin-top:14px; line-height:1.8;}
+  .tier-legend b{color:var(--ink); font-weight:500;}
+
+  .filters{display:flex; flex-direction:column; gap:16px; margin:22px 0 26px;}
+  .filter-group{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
+  .filter-label{font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); min-width:150px;}
+  .chip-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .chip{
+    font-family:'IBM Plex Sans', sans-serif; font-size:12.5px; padding:5px 14px;
+    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
+    border-radius:999px; cursor:pointer; transition:all 0.15s ease;
+  }
+  .chip:hover{border-color:var(--ink-soft);}
+  .chip.active{background:var(--ink); border-color:var(--ink); color:#fff;}
+  .clear-filters{font-size:12px; color:var(--brick); background:none; border:none; text-decoration:underline; cursor:pointer; padding:0;}
+  .results-line{font-size:12.5px; color:var(--muted); margin-bottom:14px;}
+
+  .table-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface);}
   table{width:100%; border-collapse:collapse; min-width:600px;}
-  thead th{position:sticky; top:0; background:var(--ink); text-align:left; padding:0; z-index:2;}
-  thead th button{width:100%; text-align:left; background:none; border:none; color:var(--paper); font-family:'IBM Plex Mono', monospace; font-size:11px; text-transform:uppercase; letter-spacing:0.08em; padding:12px 14px; cursor:pointer; display:flex; align-items:center; gap:6px;}
-  .sort-arrow{opacity:0.5; font-size:10px;}
-  .sort-arrow.active{opacity:1; color:var(--amber-soft);}
-  tbody tr{border-top:1px solid var(--paper-line); cursor:pointer; transition:background 0.1s ease;}
-  tbody tr:nth-child(even){background:var(--paper-dim);}
-  tbody tr:hover{background:rgba(201,138,44,0.14);}
-  tbody td{padding:12px 14px; font-size:13.5px; vertical-align:top;}
+  thead th{position:sticky; top:0; background:var(--surface); text-align:left; padding:0; border-bottom:1px solid var(--line); z-index:2;}
+  thead th button{
+    width:100%; text-align:left; background:none; border:none; color:var(--muted);
+    font-size:11.5px; font-weight:500; text-transform:uppercase; letter-spacing:0.07em;
+    padding:16px 18px; cursor:pointer; display:flex; align-items:center; gap:6px;
+  }
+  thead th button:hover{color:var(--ink);}
+  .sort-arrow{opacity:0.4; font-size:9px;}
+  .sort-arrow.active{opacity:1; color:var(--accent);}
+  tbody tr{border-top:1px solid var(--line-soft); cursor:pointer; transition:background 0.12s ease;}
+  tbody tr:hover{background:rgba(51,81,63,0.045);}
+  tbody td{padding:15px 18px; font-size:13.5px; vertical-align:top; color:var(--ink-soft);}
   .id-cell{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink);}
-  .decommissioned{text-decoration:line-through; color:var(--text-muted);}
-  .stamp{display:inline-block; font-family:'IBM Plex Mono', monospace; font-size:10.5px; letter-spacing:0.04em; padding:2px 8px; border-radius:2px; border:1px solid currentColor; white-space:nowrap;}
-  .chevron{font-family:'IBM Plex Mono', monospace; color:var(--text-muted); font-size:12px; transition:transform 0.15s ease;}
+  .decommissioned{text-decoration:line-through; color:var(--muted);}
+  .stamp{display:inline-flex; align-items:center; gap:7px; font-size:13px; color:var(--ink-soft);}
+  .stamp-dot{width:7px;height:7px;border-radius:50%; flex-shrink:0;}
+  .chevron{color:var(--muted); font-size:11px; transition:transform 0.15s ease;}
   tr.expanded .chevron{transform:rotate(90deg);}
+
   .detail-row td{background:var(--ink); padding:0;}
-  .detail-panel{padding:20px 24px; display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:16px 28px;}
-  .detail-field dt{font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.08em; color:var(--amber-soft); margin-bottom:4px;}
-  .detail-field dd{margin:0; color:var(--paper); font-size:13.5px; line-height:1.4; word-break:break-word;}
-  .empty-state, .error-state, .loading-state{padding:60px 20px; text-align:center; font-family:'IBM Plex Mono', monospace; color:var(--text-muted); border:1px dashed var(--ink);}
-  .error-state{color:var(--rust); border-color:var(--rust);}
-  footer{margin-top:30px; font-family:'IBM Plex Mono', monospace; font-size:11.5px; color:var(--text-muted);}
+  .detail-panel{padding:26px 28px; display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:18px 30px;}
+  .detail-field dt{font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.07em; color:var(--accent-soft); margin-bottom:5px;}
+  .detail-field dd{margin:0; color:var(--paper); font-size:13.5px; line-height:1.5; word-break:break-word;}
+
+  .empty-state, .error-state, .loading-state{padding:70px 20px; text-align:center; font-size:13.5px; color:var(--muted); border:1px dashed var(--line); border-radius:10px;}
+  .error-state{color:var(--brick); border-color:rgba(139,74,66,0.3);}
+  footer{margin-top:36px; font-size:12px; color:var(--muted);}
   .hidden{display:none !important;}
+
   @media (max-width:720px){
-    .title{font-size:28px;}
+    .title{font-size:27px;}
     thead{display:none;}
     table, tbody, tbody tr, tbody td{display:block; width:100%;}
-    tbody tr{padding:12px 14px; border-top:1px solid var(--paper-line);}
-    tbody td{padding:2px 0; border:none;}
+    tbody tr{padding:14px 18px; border-top:1px solid var(--line-soft);}
+    tbody td{padding:3px 0; border:none;}
     .detail-panel{grid-template-columns:1fr;}
     .filter-label{min-width:0;}
+    .age-slider-item input[type="range"]{width:120px;}
   }
 </style>
 </head>
@@ -127,6 +189,20 @@
     <input type="text" class="search-input" id="searchInput" placeholder="Search equipment — any field&hellip;">
   </div>
 
+  <div class="risk-block" id="riskBlock">
+    <span class="filter-label">Risk Assessment</span>
+    <div class="risk-chip-row" id="riskChipRow"></div>
+  </div>
+
+  <div class="age-block" id="ageBlock">
+    <span class="filter-label">Equipment Age</span>
+    <div class="age-slider-row">
+      <div class="age-slider-item"><span>Min</span><input type="range" id="ageMinSlider" min="0" max="40" value="0" step="1"><span id="ageMinLabel">0</span></div>
+      <div class="age-slider-item"><span>Max</span><input type="range" id="ageMaxSlider" min="0" max="40" value="40" step="1"><span id="ageMaxLabel">40</span></div>
+    </div>
+    <label class="age-unknown-toggle"><input type="checkbox" id="includeUnknownAge" checked> Include equipment with no purchase date and no usable asset tag</label>
+  </div>
+
   <div class="filters" id="filters"></div>
   <p class="results-line" id="resultsLine"></p>
   <div id="content"><div class="loading-state">Fetching the registry&hellip;</div></div>
@@ -139,28 +215,36 @@ const SPREADSHEET_ID = "159nWwkPuJGSqJTQn1yV8si8pVxz5PFDy1uAjK9Rz5aY";
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.email";
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
 const MAX_TABLE_COLUMNS = 6;
-const EXCLUDED_COLUMNS = ['username', 'password'];
+const EXCLUDED_COLUMNS = ['username', 'password', 'operational unit (mother asset tag)'];
+const FILTER_EXCLUDE_PATTERNS = [/notes/i, /^sort function$/i];
 const HEADER_SCAN_LIMIT = 30;
 
 let accessToken = null, tokenClient = null, sheetTitle = null;
 let rows = [], headers = [], filters = {}, categoricalCols = [], primaryCols = [];
 let sortState = { col: null, dir: 1 };
 let expandedIndex = null, searchTerm = '', legendItems = [];
+
+let riskCol = null, riskFilterValues = new Set();
+let usageTierCol = null, tierLegendPairs = [];
+let ageModel = { dateCol: null, tagCol: null, regression: null };
+let ageMin = 0, ageMax = 40, ageDataMax = 40, includeUnknownAge = true;
+
 const els = {};
 function bindEls(){
   ['gate','gateError','gsiButtonContainer','app','statsLine','syncDot','syncText','whoami',
    'refreshBtn','signoutBtn','searchInput','filters','resultsLine','content','lastUpdated',
-   'legendToggle','legendBody','legendCaret'].forEach(id => els[id] = document.getElementById(id));
+   'legendToggle','legendBody','legendCaret','riskBlock','riskChipRow',
+   'ageMinSlider','ageMaxSlider','ageMinLabel','ageMaxLabel','includeUnknownAge'].forEach(id => els[id] = document.getElementById(id));
 }
 function escapeHtml(str){ return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function isTruthy(val){ const v = (val || '').toString().trim().toLowerCase(); return v === 'true' || v === 'yes' || v === 'y' || v === '1'; }
 function looksLikeStatusHeader(h){ return /status|condition|state|category|type|building|room|group|tag/i.test(h); }
-const COLOR_WORD_MAP = { red:'#8E3B2F', green:'#3E6259', yellow:'#C98A2C', amber:'#C98A2C', orange:'#B15C1E', blue:'#345A7A', gray:'#5B6360', grey:'#5B6360' };
+const COLOR_WORD_MAP = { red:'#8B4A42', green:'#33513F', yellow:'#A8823D', amber:'#A8823D', orange:'#8B5A3C', blue:'#3E5A73', gray:'#7A7D76', grey:'#7A7D76' };
 function colorForValue(value){
   const key = (value || '').toString().trim().toLowerCase();
   if (COLOR_WORD_MAP[key]) return COLOR_WORD_MAP[key];
   let hash = 0; for (let i = 0; i < key.length; i++) hash = (hash * 31 + key.charCodeAt(i)) >>> 0;
-  const palette = ['#3E6259', '#C98A2C', '#8E3B2F', '#5B6360', '#1B2430'];
+  const palette = ['#33513F', '#A8823D', '#8B4A42', '#7A7D76', '#3E5A73'];
   return palette[hash % palette.length];
 }
 function detectHeaderRow(matrix){
@@ -173,6 +257,75 @@ function extractLegend(matrix, headerIdx){
   for (let i = 0; i < headerIdx; i++){ matrix[i].forEach(cell => { const v = (cell || '').toString().trim(); if (v && !seen.has(v.toLowerCase())){ seen.add(v.toLowerCase()); items.push(v); } }); }
   return items;
 }
+function buildTierLegend(matrix, headerIdx){
+  let tierColIdx = -1;
+  for (let i = 0; i <= headerIdx && tierColIdx === -1; i++){
+    matrix[i].forEach((cell, idx) => { if (tierColIdx === -1 && /^usage tier$/i.test((cell||'').toString().trim())) tierColIdx = idx; });
+  }
+  if (tierColIdx === -1) return [];
+  const pairs = [];
+  for (let i = 0; i < headerIdx; i++){
+    const cell = (matrix[i][tierColIdx] || '').toString().trim();
+    if (/^[1-9]$/.test(cell)){
+      let desc = '';
+      for (let c = tierColIdx + 1; c < matrix[i].length; c++){
+        const v = (matrix[i][c] || '').toString().trim();
+        if (v) { desc = v; break; }
+      }
+      if (desc) pairs.push({ tier: cell, desc });
+    }
+  }
+  pairs.sort((a,b) => parseInt(a.tier,10) - parseInt(b.tier,10));
+  return pairs;
+}
+function findCol(regex){ return headers.find(h => regex.test(h)); }
+function parseDate(str){ if (!str) return null; const d = new Date(str); return isNaN(d.getTime()) ? null : d; }
+function buildAgeModel(){
+  ageModel.dateCol = findCol(/purchase date/i);
+  ageModel.tagCol = findCol(/asset tag/i);
+  ageModel.regression = null;
+  if (!ageModel.dateCol || !ageModel.tagCol) return;
+  const pts = [];
+  rows.forEach(r => {
+    const tagNum = parseFloat((r[ageModel.tagCol]||'').toString().replace(/[^\d.]/g,''));
+    const d = parseDate(r[ageModel.dateCol]);
+    if (!isNaN(tagNum) && d) pts.push({ tag: tagNum, ms: d.getTime() });
+  });
+  if (pts.length >= 2){
+    const n = pts.length;
+    const sumX = pts.reduce((s,p)=>s+p.tag,0), sumY = pts.reduce((s,p)=>s+p.ms,0);
+    const sumXY = pts.reduce((s,p)=>s+p.tag*p.ms,0), sumXX = pts.reduce((s,p)=>s+p.tag*p.tag,0);
+    const denom = (n*sumXX - sumX*sumX);
+    if (denom !== 0){ const a = (n*sumXY - sumX*sumY)/denom; const b = (sumY - a*sumX)/n; ageModel.regression = {a,b}; }
+  }
+}
+function computeAge(r){
+  let date = null, estimated = false;
+  if (ageModel.dateCol){ const d = parseDate(r[ageModel.dateCol]); if (d) date = d; }
+  if (!date && ageModel.regression && ageModel.tagCol){
+    const tagNum = parseFloat((r[ageModel.tagCol]||'').toString().replace(/[^\d.]/g,''));
+    if (!isNaN(tagNum)){
+      const est = new Date(ageModel.regression.a*tagNum + ageModel.regression.b);
+      if (!isNaN(est.getTime())){ date = est; estimated = true; }
+    }
+  }
+  if (!date) return { years: null, estimated: false };
+  const years = (Date.now() - date.getTime()) / (365.25*24*3600*1000);
+  return { years: Math.max(0, years), estimated };
+}
+function annotateAges(){
+  buildAgeModel();
+  let maxYears = 0;
+  rows.forEach(r => {
+    const a = computeAge(r);
+    r._ageYears = a.years; r._ageEstimated = a.estimated;
+    if (a.years !== null) maxYears = Math.max(maxYears, a.years);
+  });
+  ageDataMax = Math.max(5, Math.ceil(maxYears));
+  els.ageMinSlider.max = ageDataMax; els.ageMaxSlider.max = ageDataMax;
+  if (ageMax > ageDataMax || ageMax === 40) { ageMax = ageDataMax; els.ageMaxSlider.value = ageDataMax; els.ageMaxLabel.textContent = ageDataMax; }
+}
+
 window.onload = () => { bindEls(); if (window.google && google.accounts) initGSI(); };
 function initGSI(){
   tokenClient = google.accounts.oauth2.initTokenClient({
@@ -180,10 +333,10 @@ function initGSI(){
     callback: (resp) => { if (resp.error){ showGateError('Sign-in failed: ' + resp.error); return; } accessToken = resp.access_token; onSignedIn(); },
   });
   const btn = document.createElement('button');
-  btn.className = 'refresh-btn'; btn.style.padding = '12px 22px'; btn.style.fontSize = '13px';
+  btn.className = 'refresh-btn'; btn.style.padding = '12px 24px'; btn.style.fontSize = '13.5px';
   btn.textContent = 'Sign in with Google';
   btn.addEventListener('click', () => tokenClient.requestAccessToken({ prompt: 'consent' }));
-  els.gsiButtonContainer.appendChild(btn);
+  document.getElementById('gsiButtonContainer').appendChild(btn);
 }
 function showGateError(msg){ els.gateError.textContent = msg; els.gateError.classList.remove('hidden'); }
 async function onSignedIn(){
@@ -216,6 +369,8 @@ async function loadData(){
     if (!matrix.length) throw { code: 0, message: 'The sheet appears to be empty.' };
     const headerIdx = detectHeaderRow(matrix);
     legendItems = extractLegend(matrix, headerIdx);
+    const tierLegendRaw = buildTierLegend(matrix, headerIdx);
+
     const rawHeaderRow = matrix[headerIdx];
     const colIndexes = []; const cleanHeaders = [];
     rawHeaderRow.forEach((h, idx) => {
@@ -225,6 +380,8 @@ async function loadData(){
       colIndexes.push(idx); cleanHeaders.push(name);
     });
     headers = cleanHeaders;
+    tierLegendPairs = tierLegendRaw;
+
     rows = [];
     for (let r = headerIdx + 1; r < matrix.length; r++){
       const rawRow = matrix[r];
@@ -232,13 +389,24 @@ async function loadData(){
       const obj = {}; colIndexes.forEach((colIdx, i) => { obj[headers[i]] = rawRow[colIdx] || ''; });
       rows.push(obj);
     }
-    computeColumnRoles(); buildFilterUI(); buildLegendUI(); render();
+
+    riskCol = findCol(/risk assessment/i);
+    usageTierCol = findCol(/^usage tier$/i);
+    annotateAges();
+    computeColumnRoles();
+    if (riskCol) categoricalCols = categoricalCols.filter(c => c !== riskCol);
+    categoricalCols = categoricalCols.filter(c => !FILTER_EXCLUDE_PATTERNS.some(p => p.test(c)));
+    buildFilterUI();
+    buildRiskFilterUI();
+    buildLegendUI();
+    render();
+
     els.syncText.textContent = 'Synced';
     els.lastUpdated.textContent = 'Last synced ' + new Date().toLocaleTimeString();
   } catch (err) {
     els.syncDot.classList.add('error'); els.syncText.textContent = 'Sync failed';
     const msg = err && err.message ? err.message : 'Unknown error reaching the sheet.';
-    els.content.innerHTML = `<div class="error-state">${escapeHtml(msg)}</div>`;
+    document.getElementById('content').innerHTML = `<div class="error-state">${escapeHtml(msg)}</div>`;
     if (err && err.code === 401){ setTimeout(() => tokenClient.requestAccessToken({ prompt: '' }), 500); }
     console.error(err);
   }
@@ -246,6 +414,28 @@ async function loadData(){
 function buildLegendUI(){
   if (!legendItems.length){ els.legendBody.innerHTML = '<p>No legend rows detected above the header in this sheet.</p>'; return; }
   els.legendBody.innerHTML = '<ul>' + legendItems.map(i => `<li>${escapeHtml(i)}</li>`).join('') + '</ul>';
+}
+function riskLevel(value){
+  const v = (value||'').toLowerCase();
+  if (/high/.test(v)) return 'high';
+  if (/moderate|medium/.test(v)) return 'moderate';
+  if (/low|basic/.test(v)) return 'low';
+  return 'other';
+}
+function buildRiskFilterUI(){
+  if (!riskCol){ document.getElementById('riskBlock').classList.add('hidden'); return; }
+  const values = [...new Set(rows.map(r => (r[riskCol]||'').toString().trim()).filter(Boolean))];
+  values.sort((a,b) => { const order = {high:0,moderate:1,low:2,other:3}; return order[riskLevel(a)] - order[riskLevel(b)]; });
+  els.riskChipRow.innerHTML = '';
+  values.forEach(v => {
+    const chip = document.createElement('button');
+    chip.className = 'risk-chip' + (riskFilterValues.has(v) ? ' active' : '');
+    chip.dataset.level = riskLevel(v);
+    chip.textContent = v;
+    chip.setAttribute('aria-pressed', riskFilterValues.has(v) ? 'true' : 'false');
+    chip.addEventListener('click', () => { if (riskFilterValues.has(v)) riskFilterValues.delete(v); else riskFilterValues.add(v); buildRiskFilterUI(); render(); });
+    els.riskChipRow.appendChild(chip);
+  });
 }
 function computeColumnRoles(){
   categoricalCols = [];
@@ -276,6 +466,12 @@ function buildFilterUI(){
       chipRow.appendChild(chip);
     });
     group.appendChild(chipRow); els.filters.appendChild(group);
+    if (col === usageTierCol && tierLegendPairs.length){
+      const legendDiv = document.createElement('div');
+      legendDiv.className = 'tier-legend';
+      legendDiv.innerHTML = tierLegendPairs.map(p => `<b>${escapeHtml(p.tier)}</b> = ${escapeHtml(p.desc)}`).join(' &nbsp;&middot;&nbsp; ');
+      els.filters.appendChild(legendDiv);
+    }
   });
   const anyActive = Object.values(filters).some(s => s.size > 0);
   if (anyActive) {
@@ -287,6 +483,11 @@ function buildFilterUI(){
 function getFiltered(){
   let out = rows;
   Object.entries(filters).forEach(([col, set]) => { if (set.size > 0) out = out.filter(r => set.has((r[col]||'').toString().trim())); });
+  if (riskFilterValues.size > 0 && riskCol) out = out.filter(r => riskFilterValues.has((r[riskCol]||'').toString().trim()));
+  out = out.filter(r => {
+    if (r._ageYears === null || r._ageYears === undefined) return includeUnknownAge;
+    return r._ageYears >= ageMin && r._ageYears <= ageMax;
+  });
   if (searchTerm.trim()) { const term = searchTerm.trim().toLowerCase(); out = out.filter(r => headers.some(h => (r[h]||'').toString().toLowerCase().includes(term))); }
   if (sortState.col) {
     out = [...out].sort((a,b) => {
@@ -298,20 +499,27 @@ function getFiltered(){
   }
   return out;
 }
-function findCol(regex){ return headers.find(h => regex.test(h)); }
 function render(){
   const filtered = getFiltered();
-  els.statsLine.textContent = `${rows.length} instruments across ${categoricalCols.length} tracked attributes`;
-  els.resultsLine.textContent = `Showing ${filtered.length} of ${rows.length} instruments`;
+  document.getElementById('statsLine').textContent = `${rows.length} instruments across ${categoricalCols.length} tracked attributes`;
+  document.getElementById('resultsLine').textContent = `Showing ${filtered.length} of ${rows.length} instruments`;
+  const content = document.getElementById('content');
   if (filtered.length === 0) {
-    els.content.innerHTML = `<div class="empty-state">No equipment matches your filters.<br><button class="clear-filters" id="emptyClear" style="margin-top:10px;">Clear filters &amp; search</button></div>`;
-    document.getElementById('emptyClear').addEventListener('click', () => { Object.values(filters).forEach(s => s.clear()); searchTerm = ''; els.searchInput.value = ''; buildFilterUI(); render(); });
+    content.innerHTML = `<div class="empty-state">No equipment matches your filters.<br><button class="clear-filters" id="emptyClear" style="margin-top:10px;">Clear filters &amp; search</button></div>`;
+    document.getElementById('emptyClear').addEventListener('click', () => {
+      Object.values(filters).forEach(s => s.clear()); riskFilterValues.clear();
+      ageMin = 0; ageMax = ageDataMax; els.ageMinSlider.value = 0; els.ageMaxSlider.value = ageDataMax;
+      els.ageMinLabel.textContent = 0; els.ageMaxLabel.textContent = ageDataMax;
+      searchTerm = ''; els.searchInput.value = '';
+      buildFilterUI(); buildRiskFilterUI(); render();
+    });
     return;
   }
   const statusCol = findCol(/^status$/i) || findCol(/status/i);
   const colorCol = findCol(/color code/i);
   const strikeCol = findCol(/strikethrough/i);
   const nameCol = headers[0];
+  const dateCol = ageModel.dateCol;
   let html = '<div class="table-scroll"><table><thead><tr>';
   primaryCols.forEach(col => {
     const active = sortState.col === col;
@@ -325,23 +533,27 @@ function render(){
       const val = (r[col]||'').toString(); const isNameCol = col === nameCol;
       if (col === statusCol && val) {
         const color = colorCol && r[colorCol] ? colorForValue(r[colorCol]) : colorForValue(val);
-        html += `<td><span class="stamp" style="color:${color};">${escapeHtml(val)}</span></td>`;
+        html += `<td><span class="stamp"><span class="stamp-dot" style="background:${color};"></span>${escapeHtml(val)}</span></td>`;
       } else if (isNameCol) { html += `<td class="id-cell ${decommissioned ? 'decommissioned':''}">${escapeHtml(val)}</td>`; }
-      else { html += `<td>${escapeHtml(val)}</td>`; }
+      else if (col === dateCol && !val && r._ageYears !== null && r._ageYears !== undefined) {
+        html += `<td>&mdash; <span class="age-estimated-tag">~${r._ageYears.toFixed(1)} yrs (estimated)</span></td>`;
+      } else { html += `<td>${escapeHtml(val)}</td>`; }
     });
     html += `<td><span class="chevron">&#9656;</span></td></tr>`;
     if (expandedIndex === i) {
       html += `<tr class="detail-row"><td colspan="${primaryCols.length+1}"><dl class="detail-panel">`;
       headers.forEach(h => { html += `<div class="detail-field"><dt>${escapeHtml(h)}</dt><dd>${escapeHtml(r[h]) || '—'}</dd></div>`; });
+      const ageLabel = r._ageYears !== null && r._ageYears !== undefined ? r._ageYears.toFixed(1) + ' years' + (r._ageEstimated ? ' (estimated from asset tag)' : ' (from purchase date)') : 'Unknown';
+      html += `<div class="detail-field"><dt>Estimated Age</dt><dd>${escapeHtml(ageLabel)}</dd></div>`;
       html += '</dl></td></tr>';
     }
   });
   html += '</tbody></table></div>';
-  els.content.innerHTML = html;
-  els.content.querySelectorAll('th button').forEach(btn => {
+  content.innerHTML = html;
+  content.querySelectorAll('th button').forEach(btn => {
     btn.addEventListener('click', () => { const col = btn.getAttribute('data-sort'); if (sortState.col === col) sortState.dir *= -1; else { sortState.col = col; sortState.dir = 1; } render(); });
   });
-  els.content.querySelectorAll('tr.data-row').forEach(tr => {
+  content.querySelectorAll('tr.data-row').forEach(tr => {
     tr.addEventListener('click', () => { const idx = parseInt(tr.getAttribute('data-idx'), 10); expandedIndex = expandedIndex === idx ? null : idx; render(); });
   });
 }
@@ -361,6 +573,9 @@ document.addEventListener('DOMContentLoaded', () => {
     body.classList.toggle('open');
     document.getElementById('legendCaret').innerHTML = body.classList.contains('open') ? '&#9662;' : '&#9656;';
   });
+  els.ageMinSlider.addEventListener('input', (e) => { ageMin = Math.min(parseInt(e.target.value,10), ageMax); e.target.value = ageMin; els.ageMinLabel.textContent = ageMin; render(); });
+  els.ageMaxSlider.addEventListener('input', (e) => { ageMax = Math.max(parseInt(e.target.value,10), ageMin); e.target.value = ageMax; els.ageMaxLabel.textContent = ageMax; render(); });
+  els.includeUnknownAge.addEventListener('change', (e) => { includeUnknownAge = e.target.checked; render(); });
 });
 </script>
 </body>

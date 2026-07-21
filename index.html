@@ -8,6 +8,7 @@
 <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
 <link href="https://fonts.googleapis.com/css2?family=Fraunces:ital,opsz,wght@0,9..144,300;0,9..144,400;0,9..144,500;1,9..144,400&family=IBM+Plex+Sans:wght@400;500;600&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
 <script src="https://accounts.google.com/gsi/client" async defer></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
 <style>
   :root{
     --paper:#EDF4F8; --surface:#FFFFFF; --line:rgba(15,109,183,0.16); --line-soft:rgba(15,109,183,0.09);
@@ -46,7 +47,8 @@
   .gate-error{color:var(--risk-high); font-size:13px; max-width:460px; border:1px solid rgba(179,38,30,0.3); padding:12px 18px; border-radius:8px; background:rgba(179,38,30,0.05);}
 
   .security-note{font-size:12px; color:var(--brand-deep); background:rgba(15,109,183,0.07); border:1px solid rgba(15,109,183,0.22); padding:10px 16px; border-radius:8px; margin-bottom:12px;}
-  .it-note{font-size:12px; color:var(--risk-moderate); background:rgba(154,107,0,0.07); border:1px solid rgba(154,107,0,0.25); padding:10px 16px; border-radius:8px; margin-bottom:24px;}
+  .it-note{font-size:12px; color:var(--risk-moderate); background:rgba(154,107,0,0.07); border:1px solid rgba(154,107,0,0.25); padding:10px 16px; border-radius:8px; margin-bottom:12px;}
+  .it-note:last-of-type{margin-bottom:24px;}
 
   .legend-block{margin-bottom:26px; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
   .legend-toggle{width:100%; display:flex; justify-content:space-between; align-items:center; background:var(--surface); color:var(--ink); border:none; font-size:12.5px; font-weight:500; letter-spacing:0.04em; padding:14px 18px; cursor:pointer;}
@@ -66,6 +68,14 @@
     .roadmap-row{grid-template-columns:80px 1fr; grid-template-rows:auto auto; row-gap:4px;}
     .roadmap-meta{grid-column:1 / 3; text-align:left;}
   }
+
+  .export-actions{display:flex; gap:8px; margin-bottom:14px;}
+  .export-field-grid{display:grid; grid-template-columns:repeat(auto-fill, minmax(190px,1fr)); gap:8px 16px; margin-bottom:16px;}
+  .export-field-item{display:flex; align-items:center; gap:8px; font-size:12.5px; color:var(--ink-soft); cursor:pointer;}
+  .export-field-item input{accent-color:var(--brand); flex-shrink:0;}
+  .export-field-item.computed{color:var(--brand-deep);}
+  .export-footer{display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:12px; padding-top:14px; border-top:1px solid var(--line-soft);}
+  .export-count{font-size:12.5px; color:var(--muted);}
 
   .search-row{margin-bottom:22px;}
   .search-input{
@@ -190,8 +200,9 @@
     </div>
   </div>
 
-  <p class="security-note">Username and password columns are stripped out before this page ever displays or stores anything, from both linked sheets.</p>
+  <p class="security-note">Username and password columns are stripped out before this page ever displays or stores anything, from all linked sheets.</p>
   <p class="it-note hidden" id="itNote"></p>
+  <p class="it-note hidden" id="automationNote"></p>
 
   <div class="legend-block">
     <button class="legend-toggle" id="legendToggle">Sheet legend &amp; conventions <span id="legendCaret">&#9656;</span></button>
@@ -202,6 +213,21 @@
     <button class="legend-toggle" id="roadmapToggle">Replacement cost roadmap <span id="roadmapCaret">&#9656;</span></button>
     <div class="legend-body" id="roadmapBody">
       <div id="roadmapContent"></div>
+    </div>
+  </div>
+
+  <div class="legend-block" id="exportBlock">
+    <button class="legend-toggle" id="exportToggle">Export to spreadsheet <span id="exportCaret">&#9656;</span></button>
+    <div class="legend-body" id="exportBody">
+      <div class="export-actions">
+        <button class="chip" id="exportSelectAll">Select all</button>
+        <button class="chip" id="exportSelectNone">Select none</button>
+      </div>
+      <div class="export-field-grid" id="exportFieldGrid"></div>
+      <div class="export-footer">
+        <span class="export-count" id="exportCountLabel"></span>
+        <button class="refresh-btn" id="exportBtn">Export to Excel</button>
+      </div>
     </div>
   </div>
 
@@ -245,6 +271,7 @@
 const CLIENT_ID = "186946197176-46q3kcqv3b0ii5jhgmjl51lht489m3bq.apps.googleusercontent.com";
 const SPREADSHEET_ID = "159nWwkPuJGSqJTQn1yV8si8pVxz5PFDy1uAjK9Rz5aY";
 const IT_SPREADSHEET_ID = "1KvPby9zvMLaaH1n0e2hku0NxVq7Q7NB9UimWwrZDS_s";
+const AUTOMATION_SPREADSHEET_ID = "1j_N8SbLk81t4gy7eBik4GvXTKjZlpYBgtlOHC3hbUsE";
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.email";
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
 const MAX_TABLE_COLUMNS = 6;
@@ -257,6 +284,12 @@ const FILTER_ALLOWED_PATTERNS = [
 const HEADER_SCAN_LIMIT = 30;
 const LIFE_COL_KEY = '__life_remaining__';
 const OLDEST_KNOWN_PURCHASE_MS = new Date(2009, 6, 1).getTime();
+const COMPUTED_EXPORT_FIELDS = [
+  'Estimated Age (years)', 'Life Remaining (years)',
+  'Computer Name (IT inventory)', 'Computer Service Tag (IT inventory)',
+  'Computer Name (Automation Sheet)', 'IP Address (Automation Sheet)', 'COM Port (Automation Sheet)',
+  'Cellario Name (Automation Sheet)', 'System/Location (Automation Sheet)', 'Operating System (Automation Sheet)'
+];
 
 let accessToken = null, tokenClient = null, sheetTitle = null;
 let rows = [], headers = [], filters = {}, categoricalCols = [], primaryCols = [];
@@ -269,12 +302,14 @@ let assignedLifeCol = null, actualLifeCol = null;
 let ageModel = { dateCol: null, tagCol: null, regression: null };
 let ageMin = 0, ageMax = 18, ageDataMax = 18, includeUnknownAge = true;
 let itMap = {}, itAvailable = false;
+let automationMap = {}, automationAvailable = false;
+let exportFieldState = {};
 
 const els = {};
 function bindEls(){
   ['gate','gateError','gsiButtonContainer','app','statsLine','syncDot','syncText','whoami',
    'refreshBtn','signoutBtn','searchInput','filters','resultsLine','content','lastUpdated',
-   'legendToggle','legendBody','legendCaret','riskBlock','riskChipRow','itNote',
+   'legendToggle','legendBody','legendCaret','riskBlock','riskChipRow','itNote','automationNote',
    'ageMinSlider','ageMaxSlider','ageMinLabel','ageMaxLabel','includeUnknownAge',
    'layout','sidebarToggle'].forEach(id => els[id] = document.getElementById(id));
 }
@@ -469,6 +504,58 @@ async function loadItInventory(){
     console.warn('IT inventory unavailable:', err);
   }
 }
+async function loadAutomationInventory(){
+  try {
+    const meta = await sheetsApiFetch(AUTOMATION_SPREADSHEET_ID, '?fields=sheets.properties(title,sheetId)');
+    const title = meta.sheets && meta.sheets[0] && meta.sheets[0].properties.title;
+    if (!title) throw new Error('No tabs found in linked automation sheet');
+    const range = encodeURIComponent(title + '!A1:ZZ5000');
+    const valuesResp = await sheetsApiFetch(AUTOMATION_SPREADSHEET_ID, '/values/' + range);
+    const matrix = valuesResp.values || [];
+    if (!matrix.length) throw new Error('Linked automation sheet is empty');
+    const headerIdx = detectHeaderRow(matrix);
+    const rawHeaderRow = matrix[headerIdx];
+    const colIndexes = []; const cleanHeaders = [];
+    rawHeaderRow.forEach((h, idx) => {
+      const name = (h || '').toString().trim();
+      if (!name) return;
+      if (EXCLUDED_COLUMNS.includes(name.toLowerCase())) return;
+      colIndexes.push(idx); cleanHeaders.push(name);
+    });
+    const idColIdx = cleanHeaders.findIndex(h => /broad id/i.test(h));
+    const computerNameColIdx = cleanHeaders.findIndex(h => /computer name/i.test(h));
+    const ipColIdx = cleanHeaders.findIndex(h => /ip address/i.test(h));
+    const comPortColIdx = cleanHeaders.findIndex(h => /com port/i.test(h));
+    const cellarioColIdx = cleanHeaders.findIndex(h => /cellario name/i.test(h));
+    const sysLocColIdx = cleanHeaders.findIndex(h => /system.*location/i.test(h));
+    const osColIdx = cleanHeaders.findIndex(h => /operating system/i.test(h));
+    if (idColIdx === -1) throw new Error('No Broad ID column found in linked automation sheet');
+    const newMap = {};
+    for (let r = headerIdx + 1; r < matrix.length; r++){
+      const rawRow = matrix[r];
+      if (!rawRow || rawRow.every(c => (c||'').toString().trim() === '')) continue;
+      const rowVals = colIndexes.map(ci => rawRow[ci] || '');
+      const id = (rowVals[idColIdx] || '').toString().trim();
+      if (!id) continue;
+      newMap[id] = {
+        computerName: computerNameColIdx > -1 ? (rowVals[computerNameColIdx]||'').toString().trim() : '',
+        ipAddress: ipColIdx > -1 ? (rowVals[ipColIdx]||'').toString().trim() : '',
+        comPort: comPortColIdx > -1 ? (rowVals[comPortColIdx]||'').toString().trim() : '',
+        cellarioName: cellarioColIdx > -1 ? (rowVals[cellarioColIdx]||'').toString().trim() : '',
+        systemLocation: sysLocColIdx > -1 ? (rowVals[sysLocColIdx]||'').toString().trim() : '',
+        operatingSystem: osColIdx > -1 ? (rowVals[osColIdx]||'').toString().trim() : ''
+      };
+    }
+    automationMap = newMap;
+    automationAvailable = true;
+    els.automationNote.classList.add('hidden');
+  } catch (err) {
+    automationAvailable = false;
+    els.automationNote.textContent = "Linked automation sheet isn't accessible with this Google account, so those fields are left out. Everything else still works.";
+    els.automationNote.classList.remove('hidden');
+    console.warn('Automation inventory unavailable:', err);
+  }
+}
 async function loadData(){
   els.syncText.textContent = 'Syncing…'; els.syncDot.classList.remove('error');
   try {
@@ -521,6 +608,8 @@ async function loadData(){
     buildRiskFilterUI();
     buildLegendUI();
     await loadItInventory();
+    await loadAutomationInventory();
+    buildExportUI();
     render();
 
     els.syncText.textContent = 'Synced';
@@ -651,6 +740,75 @@ function buildRoadmapUI(filteredRows){
   html += '</div>';
   content.innerHTML = html;
 }
+function buildExportUI(){
+  const grid = document.getElementById('exportFieldGrid');
+  grid.innerHTML = '';
+  headers.forEach(h => {
+    if (exportFieldState[h] === undefined) exportFieldState[h] = true;
+    grid.appendChild(makeExportCheckbox(h, false));
+  });
+  COMPUTED_EXPORT_FIELDS.forEach(h => {
+    if (h.includes('IT inventory') && !itAvailable) return;
+    if (h.includes('Automation Sheet') && !automationAvailable) return;
+    if (exportFieldState[h] === undefined) exportFieldState[h] = false;
+    grid.appendChild(makeExportCheckbox(h, true));
+  });
+}
+function makeExportCheckbox(field, isComputed){
+  const label = document.createElement('label');
+  label.className = 'export-field-item' + (isComputed ? ' computed' : '');
+  const input = document.createElement('input');
+  input.type = 'checkbox';
+  input.checked = !!exportFieldState[field];
+  input.addEventListener('change', () => { exportFieldState[field] = input.checked; });
+  label.appendChild(input);
+  const span = document.createElement('span');
+  span.textContent = field;
+  label.appendChild(span);
+  return label;
+}
+function updateExportCount(filteredCount){
+  const label = document.getElementById('exportCountLabel');
+  if (label) label.textContent = `${filteredCount} row${filteredCount === 1 ? '' : 's'} will be exported based on current search and filters.`;
+}
+function getRowExportValue(r, field){
+  if (field === 'Estimated Age (years)') return r._ageYears !== null && r._ageYears !== undefined ? r._ageYears.toFixed(1) : '';
+  if (field === 'Life Remaining (years)') return r._lifeRemaining !== null && r._lifeRemaining !== undefined ? r._lifeRemaining.toFixed(1) : '';
+  const tagColForRow = findCol(/^asset tag$/i) || findCol(/asset tag/i);
+  const tagVal = tagColForRow ? (r[tagColForRow]||'').toString().trim() : '';
+  if (field === 'Computer Name (IT inventory)' || field === 'Computer Service Tag (IT inventory)'){
+    const itRow = tagVal ? itMap[tagVal] : null;
+    if (!itRow) return '';
+    return field.startsWith('Computer Name') ? (itRow.computerName||'') : (itRow.computerServiceTag||'');
+  }
+  if (field.endsWith('(Automation Sheet)')){
+    const autoRow = tagVal ? automationMap[tagVal] : null;
+    if (!autoRow) return '';
+    if (field.startsWith('Computer Name')) return autoRow.computerName||'';
+    if (field.startsWith('IP Address')) return autoRow.ipAddress||'';
+    if (field.startsWith('COM Port')) return autoRow.comPort||'';
+    if (field.startsWith('Cellario Name')) return autoRow.cellarioName||'';
+    if (field.startsWith('System/Location')) return autoRow.systemLocation||'';
+    if (field.startsWith('Operating System')) return autoRow.operatingSystem||'';
+    return '';
+  }
+  return (r[field]||'').toString();
+}
+function exportToXlsx(){
+  const filtered = getFiltered();
+  const selectedFields = [...headers, ...COMPUTED_EXPORT_FIELDS].filter(f => exportFieldState[f]);
+  if (!selectedFields.length){ alert('Select at least one field to export.'); return; }
+  const dataRows = filtered.map(r => {
+    const obj = {};
+    selectedFields.forEach(f => { obj[f] = getRowExportValue(r, f); });
+    return obj;
+  });
+  const ws = XLSX.utils.json_to_sheet(dataRows, { header: selectedFields });
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, ws, 'CDoT Equipment');
+  const filename = 'cdot-equipment-export-' + new Date().toISOString().slice(0,10) + '.xlsx';
+  XLSX.writeFile(wb, filename);
+}
 function getFiltered(){
   let out = rows;
   Object.entries(filters).forEach(([col, set]) => { if (set.size > 0) out = out.filter(r => set.has((r[col]||'').toString().trim())); });
@@ -682,6 +840,7 @@ function render(){
   const filtered = getFiltered();
   document.getElementById('statsLine').textContent = `${rows.length} instruments across ${categoricalCols.length} tracked attributes`;
   document.getElementById('resultsLine').textContent = `Showing ${filtered.length} of ${rows.length} instruments`;
+  updateExportCount(filtered.length);
   const content = document.getElementById('content');
   if (filtered.length === 0) {
     content.innerHTML = `<div class="empty-state">No equipment matches your filters.<br><button class="clear-filters" id="emptyClear" style="margin-top:10px;">Clear filters &amp; search</button></div>`;
@@ -741,12 +900,25 @@ function render(){
       headers.forEach(h => { html += `<div class="detail-field"><dt>${escapeHtml(h)}</dt><dd>${escapeHtml(r[h]) || '—'}</dd></div>`; });
       const ageLabel = r._ageYears !== null && r._ageYears !== undefined ? r._ageYears.toFixed(1) + ' years' + (r._ageEstimated ? ' (estimated from asset tag)' : ' (from purchase date)') : 'Unknown';
       html += `<div class="detail-field"><dt>Estimated Age</dt><dd>${escapeHtml(ageLabel)}</dd></div>`;
-      if (itAvailable && tagColForRow) {
-        const tagVal = (r[tagColForRow]||'').toString().trim();
-        const itRow = tagVal ? itMap[tagVal] : null;
-        if (itRow && (itRow.computerName || itRow.computerServiceTag)) {
-          if (itRow.computerName) html += `<div class="detail-field"><dt>Computer Name (IT inventory)</dt><dd>${escapeHtml(itRow.computerName)}</dd></div>`;
-          if (itRow.computerServiceTag) html += `<div class="detail-field"><dt>Computer Service Tag (IT inventory)</dt><dd>${escapeHtml(itRow.computerServiceTag)}</dd></div>`;
+      if (tagColForRow) {
+        const tagValLinked = (r[tagColForRow]||'').toString().trim();
+        if (itAvailable) {
+          const itRow = tagValLinked ? itMap[tagValLinked] : null;
+          if (itRow && (itRow.computerName || itRow.computerServiceTag)) {
+            if (itRow.computerName) html += `<div class="detail-field"><dt>Computer Name (IT inventory)</dt><dd>${escapeHtml(itRow.computerName)}</dd></div>`;
+            if (itRow.computerServiceTag) html += `<div class="detail-field"><dt>Computer Service Tag (IT inventory)</dt><dd>${escapeHtml(itRow.computerServiceTag)}</dd></div>`;
+          }
+        }
+        if (automationAvailable) {
+          const autoRow = tagValLinked ? automationMap[tagValLinked] : null;
+          if (autoRow) {
+            if (autoRow.computerName) html += `<div class="detail-field"><dt>Computer Name (Automation Sheet)</dt><dd>${escapeHtml(autoRow.computerName)}</dd></div>`;
+            if (autoRow.ipAddress) html += `<div class="detail-field"><dt>IP Address (Automation Sheet)</dt><dd>${escapeHtml(autoRow.ipAddress)}</dd></div>`;
+            if (autoRow.comPort) html += `<div class="detail-field"><dt>COM Port (Automation Sheet)</dt><dd>${escapeHtml(autoRow.comPort)}</dd></div>`;
+            if (autoRow.cellarioName) html += `<div class="detail-field"><dt>Cellario Name (Automation Sheet)</dt><dd>${escapeHtml(autoRow.cellarioName)}</dd></div>`;
+            if (autoRow.systemLocation) html += `<div class="detail-field"><dt>System/Location (Automation Sheet)</dt><dd>${escapeHtml(autoRow.systemLocation)}</dd></div>`;
+            if (autoRow.operatingSystem) html += `<div class="detail-field"><dt>Operating System (Automation Sheet)</dt><dd>${escapeHtml(autoRow.operatingSystem)}</dd></div>`;
+          }
         }
       }
       html += '</dl></td></tr>';
@@ -786,6 +958,25 @@ document.addEventListener('DOMContentLoaded', () => {
     body.classList.toggle('open');
     document.getElementById('roadmapCaret').innerHTML = body.classList.contains('open') ? '&#9662;' : '&#9656;';
   });
+  document.getElementById('exportToggle').addEventListener('click', () => {
+    const body = document.getElementById('exportBody');
+    body.classList.toggle('open');
+    document.getElementById('exportCaret').innerHTML = body.classList.contains('open') ? '&#9662;' : '&#9656;';
+  });
+  document.getElementById('exportSelectAll').addEventListener('click', () => {
+    headers.forEach(h => exportFieldState[h] = true);
+    COMPUTED_EXPORT_FIELDS.forEach(h => {
+      if (h.includes('IT inventory') && !itAvailable) return;
+      if (h.includes('Automation Sheet') && !automationAvailable) return;
+      exportFieldState[h] = true;
+    });
+    buildExportUI();
+  });
+  document.getElementById('exportSelectNone').addEventListener('click', () => {
+    Object.keys(exportFieldState).forEach(k => exportFieldState[k] = false);
+    buildExportUI();
+  });
+  document.getElementById('exportBtn').addEventListener('click', exportToXlsx);
   els.ageMinSlider.addEventListener('input', (e) => { ageMin = Math.min(parseInt(e.target.value,10), ageMax); e.target.value = ageMin; els.ageMinLabel.textContent = ageMin; render(); });
   els.ageMaxSlider.addEventListener('input', (e) => { ageMax = Math.max(parseInt(e.target.value,10), ageMin); e.target.value = ageMax; els.ageMaxLabel.textContent = ageMax; render(); });
   els.includeUnknownAge.addEventListener('change', (e) => { includeUnknownAge = e.target.checked; render(); });

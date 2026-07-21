@@ -124,15 +124,15 @@
   .stamp-dot{width:7px;height:7px;border-radius:50%; flex-shrink:0;}
   .chevron{color:var(--muted); font-size:11px; transition:transform 0.15s ease;}
   tr.expanded .chevron{transform:rotate(90deg);}
+  .life-remaining{font-weight:500;}
+  .life-remaining.warn{color:var(--brass);}
+  .life-remaining.over{color:var(--brick);}
+  .life-remaining.ok{color:var(--accent-soft);}
 
   .detail-row td{background:var(--ink); padding:0;}
   .detail-panel{padding:26px 28px; display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:18px 30px;}
   .detail-field dt{font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.07em; color:var(--accent-soft); margin-bottom:5px;}
   .detail-field dd{margin:0; color:var(--paper); font-size:13.5px; line-height:1.5; word-break:break-word;}
-  .life-remaining{font-weight:500;}
-  .life-remaining.warn{color:var(--brass);}
-  .life-remaining.over{color:#D08A80;}
-  .life-remaining.ok{color:var(--accent-soft);}
 
   .empty-state, .error-state, .loading-state{padding:70px 20px; text-align:center; font-size:13.5px; color:var(--muted); border:1px dashed var(--line); border-radius:10px;}
   .error-state{color:var(--brick); border-color:rgba(139,74,66,0.3);}
@@ -228,11 +228,13 @@ const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly https://ww
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
 const MAX_TABLE_COLUMNS = 6;
 const EXCLUDED_COLUMNS = ['username', 'password', 'operational unit (mother asset tag)'];
+const TABLE_EXCLUDE_PATTERNS = [/^checked$/i];
 const FILTER_ALLOWED_PATTERNS = [
   /^building$/i, /^status$/i, /bookit service group/i, /anticipated equipment replacement year/i,
   /broad assigned useful life/i, /actual life expectancy/i, /^monetize\??$/i, /^usage tier$/i
 ];
 const HEADER_SCAN_LIMIT = 30;
+const LIFE_COL_KEY = '__life_remaining__';
 
 let accessToken = null, tokenClient = null, sheetTitle = null;
 let rows = [], headers = [], filters = {}, categoricalCols = [], primaryCols = [];
@@ -241,6 +243,7 @@ let expandedIndex = null, searchTerm = '', legendItems = [];
 
 let riskCol = null, riskFilterValues = new Set();
 let usageTierCol = null, tierLegendPairs = [];
+let assignedLifeCol = null, actualLifeCol = null;
 let ageModel = { dateCol: null, tagCol: null, regression: null };
 let ageMin = 0, ageMax = 40, ageDataMax = 40, includeUnknownAge = true;
 let itMap = {}, itAvailable = false;
@@ -334,6 +337,11 @@ function annotateAges(){
     const a = computeAge(r);
     r._ageYears = a.years; r._ageEstimated = a.estimated;
     if (a.years !== null) maxYears = Math.max(maxYears, a.years);
+    const assignedVal = parseFloat(r[assignedLifeCol]);
+    const actualVal = parseFloat(r[actualLifeCol]);
+    const expected = !isNaN(assignedVal) ? assignedVal : (!isNaN(actualVal) ? actualVal : null);
+    if (expected !== null && a.years !== null){ r._lifeExpected = expected; r._lifeRemaining = expected - a.years; }
+    else { r._lifeExpected = null; r._lifeRemaining = null; }
   });
   ageDataMax = Math.max(5, Math.ceil(maxYears));
   els.ageMinSlider.max = ageDataMax; els.ageMaxSlider.max = ageDataMax;
@@ -374,6 +382,22 @@ async function sheetsApiFetch(spreadsheetId, path){
   if (res.status === 403) throw { code: 403, message: "This Google account doesn't have access to that sheet." };
   if (!res.ok) throw { code: res.status, message: 'Sheets API error (HTTP ' + res.status + ')' };
   return res.json();
+}
+async function fetchStrikethroughMap(spreadsheetId, sheetTitleForRange, nameColIdxRaw){
+  if (nameColIdxRaw < 0) return [];
+  try {
+    const rangeParam = encodeURIComponent(sheetTitleForRange + '!A1:ZZ5000');
+    const fields = encodeURIComponent('sheets.data.rowData.values.effectiveFormat.textFormat.strikethrough');
+    const resp = await sheetsApiFetch(spreadsheetId, '?ranges=' + rangeParam + '&fields=' + fields);
+    const rowData = (resp.sheets && resp.sheets[0] && resp.sheets[0].data && resp.sheets[0].data[0] && resp.sheets[0].data[0].rowData) || [];
+    return rowData.map(row => {
+      const cell = row && row.values && row.values[nameColIdxRaw];
+      return !!(cell && cell.effectiveFormat && cell.effectiveFormat.textFormat && cell.effectiveFormat.textFormat.strikethrough);
+    });
+  } catch (e) {
+    console.warn('Could not read strikethrough formatting, falling back to column-only check:', e);
+    return [];
+  }
 }
 async function loadItInventory(){
   try {
@@ -446,10 +470,14 @@ async function loadData(){
     headers = cleanHeaders;
     tierLegendPairs = tierLegendRaw;
 
+    const nameColIdxRaw = rawHeaderRow.findIndex(h => (h||'').toString().trim().toLowerCase() === 'name');
+    const strikeMap = await fetchStrikethroughMap(SPREADSHEET_ID, sheetTitle, nameColIdxRaw);
+
     rows = [];
     for (let r = headerIdx + 1; r < matrix.length; r++){
       const rawRow = matrix[r];
       if (!rawRow || rawRow.every(c => (c||'').toString().trim() === '')) continue;
+      if (strikeMap[r]) continue;
       const obj = {}; colIndexes.forEach((colIdx, i) => { obj[headers[i]] = rawRow[colIdx] || ''; });
       rows.push(obj);
     }
@@ -459,6 +487,8 @@ async function loadData(){
 
     riskCol = findCol(/risk assessment/i);
     usageTierCol = findCol(/^usage tier$/i);
+    assignedLifeCol = findCol(/broad assigned useful life/i);
+    actualLifeCol = findCol(/actual life expectancy/i);
     annotateAges();
     computeColumnRoles();
     buildFilterUI();
@@ -505,11 +535,16 @@ function buildRiskFilterUI(){
   });
 }
 function computeColumnRoles(){
+  const tableHeaders = headers.filter(h => !TABLE_EXCLUDE_PATTERNS.some(p => p.test(h)));
   categoricalCols = headers.filter(h => FILTER_ALLOWED_PATTERNS.some(p => p.test(h)));
-  const scored = headers.map(h => ({ h, score: (/^(id|name|asset)/i.test(h) ? 3 : 0) + (looksLikeStatusHeader(h) ? 2 : 0) }));
+  const scored = tableHeaders.map(h => ({
+    h,
+    score: (/^name$/i.test(h) ? 4 : 0) + (/^asset tag$/i.test(h) ? 3 : 0) + (looksLikeStatusHeader(h) ? 2 : 0)
+  }));
   scored.sort((a,b) => b.score - a.score);
   primaryCols = scored.slice(0, MAX_TABLE_COLUMNS).map(s => s.h);
-  if (!primaryCols.length) primaryCols = headers.slice(0, MAX_TABLE_COLUMNS);
+  if (!primaryCols.length) primaryCols = tableHeaders.slice(0, MAX_TABLE_COLUMNS);
+  if (assignedLifeCol || actualLifeCol) primaryCols.push(LIFE_COL_KEY);
 }
 function buildFilterUI(){
   els.filters.innerHTML = '';
@@ -554,6 +589,14 @@ function getFiltered(){
   if (searchTerm.trim()) { const term = searchTerm.trim().toLowerCase(); out = out.filter(r => headers.some(h => (r[h]||'').toString().toLowerCase().includes(term))); }
   if (sortState.col) {
     out = [...out].sort((a,b) => {
+      if (sortState.col === LIFE_COL_KEY) {
+        const av = a._lifeRemaining, bv = b._lifeRemaining;
+        const aNull = (av === null || av === undefined), bNull = (bv === null || bv === undefined);
+        if (aNull && bNull) return 0;
+        if (aNull) return 1;
+        if (bNull) return -1;
+        return (av - bv) * sortState.dir;
+      }
       const av = (a[sortState.col]||'').toString(); const bv = (b[sortState.col]||'').toString();
       const an = parseFloat(av.replace(/[$,]/g,'')), bn = parseFloat(bv.replace(/[$,]/g,''));
       let cmp; if (!isNaN(an) && !isNaN(bn) && av.trim() !== '' && bv.trim() !== '') cmp = an - bn; else cmp = av.localeCompare(bv);
@@ -580,21 +623,30 @@ function render(){
   }
   const statusCol = findCol(/^status$/i) || findCol(/status/i);
   const colorCol = findCol(/color code/i);
-  const nameCol = headers[0];
+  const nameCol = findCol(/^name$/i) || headers[0];
   const dateCol = ageModel.dateCol;
   const vendorUrlCol = findCol(/vendor url|product url|vendor link|product link/i);
-  const assignedLifeCol = findCol(/broad assigned useful life/i);
-  const actualLifeCol = findCol(/actual life expectancy/i);
   const tagColForRow = findCol(/^asset tag$/i) || findCol(/asset tag/i);
   let html = '<div class="table-scroll"><table><thead><tr>';
   primaryCols.forEach(col => {
+    const label = col === LIFE_COL_KEY ? 'Life Remaining' : col;
     const active = sortState.col === col;
-    html += `<th><button data-sort="${escapeHtml(col)}">${escapeHtml(col)} <span class="sort-arrow ${active ? 'active':''}">${active && sortState.dir === -1 ? '▲' : '▼'}</span></button></th>`;
+    html += `<th><button data-sort="${escapeHtml(col)}">${escapeHtml(label)} <span class="sort-arrow ${active ? 'active':''}">${active && sortState.dir === -1 ? '▲' : '▼'}</span></button></th>`;
   });
   html += '<th style="width:36px;"></th></tr></thead><tbody>';
   filtered.forEach((r, i) => {
     html += `<tr class="data-row ${expandedIndex === i ? 'expanded':''}" data-idx="${i}">`;
     primaryCols.forEach((col) => {
+      if (col === LIFE_COL_KEY) {
+        if (r._lifeRemaining === null || r._lifeRemaining === undefined) { html += `<td>&mdash;</td>`; }
+        else {
+          const remaining = r._lifeRemaining;
+          const cls = remaining < 0 ? 'over' : (remaining < 2 ? 'warn' : 'ok');
+          const label = remaining < 0 ? `${Math.abs(remaining).toFixed(1)} yrs over` : `${remaining.toFixed(1)} yrs left`;
+          html += `<td><span class="life-remaining ${cls}">${escapeHtml(label)}</span></td>`;
+        }
+        return;
+      }
       const val = (r[col]||'').toString(); const isNameCol = col === nameCol;
       if (col === statusCol && val) {
         const color = colorCol && r[colorCol] ? colorForValue(r[colorCol]) : colorForValue(val);
@@ -615,15 +667,6 @@ function render(){
       headers.forEach(h => { html += `<div class="detail-field"><dt>${escapeHtml(h)}</dt><dd>${escapeHtml(r[h]) || '—'}</dd></div>`; });
       const ageLabel = r._ageYears !== null && r._ageYears !== undefined ? r._ageYears.toFixed(1) + ' years' + (r._ageEstimated ? ' (estimated from asset tag)' : ' (from purchase date)') : 'Unknown';
       html += `<div class="detail-field"><dt>Estimated Age</dt><dd>${escapeHtml(ageLabel)}</dd></div>`;
-      const assignedVal = parseFloat(r[assignedLifeCol]);
-      const actualVal = parseFloat(r[actualLifeCol]);
-      const expectedLife = !isNaN(assignedVal) ? assignedVal : (!isNaN(actualVal) ? actualVal : null);
-      if (expectedLife !== null && r._ageYears !== null && r._ageYears !== undefined){
-        const remaining = expectedLife - r._ageYears;
-        const cls = remaining < 0 ? 'over' : (remaining < 2 ? 'warn' : 'ok');
-        const label = remaining < 0 ? `${Math.abs(remaining).toFixed(1)} yrs past expected life` : `${remaining.toFixed(1)} yrs remaining of ${expectedLife} assigned`;
-        html += `<div class="detail-field"><dt>Life Status</dt><dd class="life-remaining ${cls}">${escapeHtml(label)}</dd></div>`;
-      }
       if (itAvailable && tagColForRow) {
         const tagVal = (r[tagColForRow]||'').toString().trim();
         const itRow = tagVal ? itMap[tagVal] : null;

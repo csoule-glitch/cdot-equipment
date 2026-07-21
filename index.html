@@ -77,6 +77,7 @@
   .main-col{min-width:0;}
 
   .filter-label{font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); display:block; margin-bottom:10px;}
+  .filter-caption{font-size:11px; color:var(--muted); margin:-6px 0 10px; font-style:italic;}
   .risk-chip-row{display:flex; gap:8px; flex-wrap:wrap;}
   .risk-chip{font-size:12.5px; font-weight:500; padding:6px 14px; border-radius:999px; cursor:pointer; border:1px solid var(--line); background:transparent; color:var(--ink-soft); transition:all 0.15s ease;}
   .risk-chip:hover{border-color:var(--brand);}
@@ -202,9 +203,10 @@
         </div>
         <div class="sidebar-section" id="ageBlock">
           <span class="filter-label">Equipment Age</span>
+          <p class="filter-caption">Capped to Broad's oldest recorded instrument, purchased 7/1/2009.</p>
           <div class="age-slider-row">
-            <div class="age-slider-item"><span>Min</span><input type="range" id="ageMinSlider" min="0" max="40" value="0" step="1"><span id="ageMinLabel">0</span></div>
-            <div class="age-slider-item"><span>Max</span><input type="range" id="ageMaxSlider" min="0" max="40" value="40" step="1"><span id="ageMaxLabel">40</span></div>
+            <div class="age-slider-item"><span>Min</span><input type="range" id="ageMinSlider" min="0" max="18" value="0" step="1"><span id="ageMinLabel">0</span></div>
+            <div class="age-slider-item"><span>Max</span><input type="range" id="ageMaxSlider" min="0" max="18" value="18" step="1"><span id="ageMaxLabel">18</span></div>
           </div>
           <label class="age-unknown-toggle"><input type="checkbox" id="includeUnknownAge" checked> Include equipment with no purchase date and no usable asset tag</label>
         </div>
@@ -235,6 +237,7 @@ const FILTER_ALLOWED_PATTERNS = [
 ];
 const HEADER_SCAN_LIMIT = 30;
 const LIFE_COL_KEY = '__life_remaining__';
+const OLDEST_KNOWN_PURCHASE_MS = new Date(2009, 6, 1).getTime(); // July 1, 2009 — oldest recorded Broad instrument
 
 let accessToken = null, tokenClient = null, sheetTitle = null;
 let rows = [], headers = [], filters = {}, categoricalCols = [], primaryCols = [];
@@ -245,7 +248,7 @@ let riskCol = null, riskFilterValues = new Set();
 let usageTierCol = null, tierLegendPairs = [];
 let assignedLifeCol = null, actualLifeCol = null;
 let ageModel = { dateCol: null, tagCol: null, regression: null };
-let ageMin = 0, ageMax = 40, ageDataMax = 40, includeUnknownAge = true;
+let ageMin = 0, ageMax = 18, ageDataMax = 18, includeUnknownAge = true;
 let itMap = {}, itAvailable = false;
 
 const els = {};
@@ -322,8 +325,11 @@ function computeAge(r){
   if (!date && ageModel.regression && ageModel.tagCol){
     const tagNum = parseFloat((r[ageModel.tagCol]||'').toString().replace(/[^\d.]/g,''));
     if (!isNaN(tagNum)){
-      const est = new Date(ageModel.regression.a*tagNum + ageModel.regression.b);
-      if (!isNaN(est.getTime())){ date = est; estimated = true; }
+      let est = new Date(ageModel.regression.a*tagNum + ageModel.regression.b);
+      if (!isNaN(est.getTime())){
+        if (est.getTime() < OLDEST_KNOWN_PURCHASE_MS) est = new Date(OLDEST_KNOWN_PURCHASE_MS); // clamp — nothing predates the oldest known instrument
+        date = est; estimated = true;
+      }
     }
   }
   if (!date) return { years: null, estimated: false };
@@ -332,20 +338,19 @@ function computeAge(r){
 }
 function annotateAges(){
   buildAgeModel();
-  let maxYears = 0;
+  const maxPossibleAgeYears = (Date.now() - OLDEST_KNOWN_PURCHASE_MS) / (365.25*24*3600*1000);
   rows.forEach(r => {
     const a = computeAge(r);
     r._ageYears = a.years; r._ageEstimated = a.estimated;
-    if (a.years !== null) maxYears = Math.max(maxYears, a.years);
     const assignedVal = parseFloat(r[assignedLifeCol]);
     const actualVal = parseFloat(r[actualLifeCol]);
     const expected = !isNaN(assignedVal) ? assignedVal : (!isNaN(actualVal) ? actualVal : null);
     if (expected !== null && a.years !== null){ r._lifeExpected = expected; r._lifeRemaining = expected - a.years; }
     else { r._lifeExpected = null; r._lifeRemaining = null; }
   });
-  ageDataMax = Math.max(5, Math.ceil(maxYears));
+  ageDataMax = Math.ceil(maxPossibleAgeYears); // slider range is grounded in the real oldest-known instrument, not just today's data
   els.ageMinSlider.max = ageDataMax; els.ageMaxSlider.max = ageDataMax;
-  if (ageMax > ageDataMax || ageMax === 40) { ageMax = ageDataMax; els.ageMaxSlider.value = ageDataMax; els.ageMaxLabel.textContent = ageDataMax; }
+  if (ageMax > ageDataMax || ageMax === 18) { ageMax = ageDataMax; els.ageMaxSlider.value = ageDataMax; els.ageMaxLabel.textContent = ageDataMax; }
 }
 
 window.onload = () => {

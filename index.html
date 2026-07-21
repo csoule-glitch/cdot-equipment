@@ -55,6 +55,18 @@
   .legend-body ul{margin:0; padding-left:18px;}
   .legend-body li{margin-bottom:5px;}
 
+  .roadmap-summary{font-size:13px; color:var(--ink-soft); margin:0 0 16px; font-weight:500;}
+  .roadmap-rows{display:flex; flex-direction:column; gap:12px;}
+  .roadmap-row{display:grid; grid-template-columns:110px 1fr 200px; align-items:center; gap:14px;}
+  .roadmap-year{font-size:12.5px; font-weight:500; color:var(--ink);}
+  .roadmap-bar-wrap{background:var(--paper); border-radius:4px; height:10px; overflow:hidden;}
+  .roadmap-bar{background:var(--brand); height:100%; border-radius:4px; transition:width 0.2s ease;}
+  .roadmap-meta{font-size:12px; color:var(--muted); text-align:right;}
+  @media (max-width:720px){
+    .roadmap-row{grid-template-columns:80px 1fr; grid-template-rows:auto auto; row-gap:4px;}
+    .roadmap-meta{grid-column:1 / 3; text-align:left;}
+  }
+
   .search-row{margin-bottom:22px;}
   .search-input{
     width:100%; font-family:'Fraunces', serif; font-style:italic; font-weight:400; font-size:21px;
@@ -186,6 +198,13 @@
     <div class="legend-body" id="legendBody"></div>
   </div>
 
+  <div class="legend-block hidden" id="roadmapBlock">
+    <button class="legend-toggle" id="roadmapToggle">Replacement cost roadmap <span id="roadmapCaret">&#9656;</span></button>
+    <div class="legend-body" id="roadmapBody">
+      <div id="roadmapContent"></div>
+    </div>
+  </div>
+
   <div class="search-row">
     <input type="text" class="search-input" id="searchInput" placeholder="Search equipment — any field&hellip;">
   </div>
@@ -237,7 +256,7 @@ const FILTER_ALLOWED_PATTERNS = [
 ];
 const HEADER_SCAN_LIMIT = 30;
 const LIFE_COL_KEY = '__life_remaining__';
-const OLDEST_KNOWN_PURCHASE_MS = new Date(2009, 6, 1).getTime(); // July 1, 2009 — oldest recorded Broad instrument
+const OLDEST_KNOWN_PURCHASE_MS = new Date(2009, 6, 1).getTime();
 
 let accessToken = null, tokenClient = null, sheetTitle = null;
 let rows = [], headers = [], filters = {}, categoricalCols = [], primaryCols = [];
@@ -262,6 +281,8 @@ function bindEls(){
 function escapeHtml(str){ return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function isTruthy(val){ const v = (val || '').toString().trim().toLowerCase(); return v === 'true' || v === 'yes' || v === 'y' || v === '1'; }
 function looksLikeStatusHeader(h){ return /status|category|type/i.test(h); }
+function parseCurrency(str){ const n = parseFloat((str||'').toString().replace(/[$,]/g,'')); return isNaN(n) ? 0 : n; }
+function formatCurrency(n){ return n.toLocaleString('en-US', { style:'currency', currency:'USD', maximumFractionDigits:0 }); }
 const COLOR_WORD_MAP = { red:'#B3261E', green:'#1D7A46', yellow:'#9A6B00', amber:'#9A6B00', orange:'#A15A1E', blue:'#0F6DB7', gray:'#5E6B78', grey:'#5E6B78' };
 function colorForValue(value){
   const key = (value || '').toString().trim().toLowerCase();
@@ -327,7 +348,7 @@ function computeAge(r){
     if (!isNaN(tagNum)){
       let est = new Date(ageModel.regression.a*tagNum + ageModel.regression.b);
       if (!isNaN(est.getTime())){
-        if (est.getTime() < OLDEST_KNOWN_PURCHASE_MS) est = new Date(OLDEST_KNOWN_PURCHASE_MS); // clamp — nothing predates the oldest known instrument
+        if (est.getTime() < OLDEST_KNOWN_PURCHASE_MS) est = new Date(OLDEST_KNOWN_PURCHASE_MS);
         date = est; estimated = true;
       }
     }
@@ -348,7 +369,7 @@ function annotateAges(){
     if (expected !== null && a.years !== null){ r._lifeExpected = expected; r._lifeRemaining = expected - a.years; }
     else { r._lifeExpected = null; r._lifeRemaining = null; }
   });
-  ageDataMax = Math.ceil(maxPossibleAgeYears); // slider range is grounded in the real oldest-known instrument, not just today's data
+  ageDataMax = Math.ceil(maxPossibleAgeYears);
   els.ageMinSlider.max = ageDataMax; els.ageMaxSlider.max = ageDataMax;
   if (ageMax > ageDataMax || ageMax === 18) { ageMax = ageDataMax; els.ageMaxSlider.value = ageDataMax; els.ageMaxLabel.textContent = ageDataMax; }
 }
@@ -583,6 +604,53 @@ function buildFilterUI(){
     els.filters.appendChild(clearBtn);
   }
 }
+function buildRoadmapUI(filteredRows){
+  const yearCol = findCol(/anticipated equipment replacement year/i);
+  const costCol = findCol(/anticipated cost of replacement equipment/i);
+  const block = document.getElementById('roadmapBlock');
+  const content = document.getElementById('roadmapContent');
+  if (!yearCol && !costCol) { block.classList.add('hidden'); return; }
+  block.classList.remove('hidden');
+
+  const buckets = {};
+  filteredRows.forEach(r => {
+    const yearRaw = yearCol ? (r[yearCol]||'').toString().trim() : '';
+    const year = yearRaw || 'Not yet planned';
+    const cost = costCol ? parseCurrency(r[costCol]) : 0;
+    if (!buckets[year]) buckets[year] = { count: 0, total: 0 };
+    buckets[year].count += 1;
+    buckets[year].total += cost;
+  });
+  const entries = Object.entries(buckets).map(([year, v]) => ({ year, ...v }));
+  entries.sort((a,b) => {
+    if (a.year === 'Not yet planned') return 1;
+    if (b.year === 'Not yet planned') return -1;
+    return parseInt(a.year,10) - parseInt(b.year,10);
+  });
+
+  const metric = costCol ? 'cost' : 'count';
+  const maxVal = Math.max(1, ...entries.map(e => metric === 'cost' ? e.total : e.count));
+  const grandCount = entries.reduce((s,e) => s + e.count, 0);
+  const grandTotal = entries.reduce((s,e) => s + e.total, 0);
+
+  let html = metric === 'cost'
+    ? `<p class="roadmap-summary">${grandCount} instrument${grandCount === 1 ? '' : 's'} in current view &middot; ${formatCurrency(grandTotal)} total anticipated replacement cost</p>`
+    : `<p class="roadmap-summary">${grandCount} instrument${grandCount === 1 ? '' : 's'} in current view &middot; no replacement cost column found, showing counts only</p>`;
+  html += '<div class="roadmap-rows">';
+  entries.forEach(e => {
+    const pct = Math.round(((metric === 'cost' ? e.total : e.count) / maxVal) * 100);
+    const meta = metric === 'cost'
+      ? `${e.count} instrument${e.count === 1 ? '' : 's'} &middot; ${formatCurrency(e.total)}`
+      : `${e.count} instrument${e.count === 1 ? '' : 's'}`;
+    html += `<div class="roadmap-row">
+      <div class="roadmap-year">${escapeHtml(e.year)}</div>
+      <div class="roadmap-bar-wrap"><div class="roadmap-bar" style="width:${pct}%;"></div></div>
+      <div class="roadmap-meta">${meta}</div>
+    </div>`;
+  });
+  html += '</div>';
+  content.innerHTML = html;
+}
 function getFiltered(){
   let out = rows;
   Object.entries(filters).forEach(([col, set]) => { if (set.size > 0) out = out.filter(r => set.has((r[col]||'').toString().trim())); });
@@ -624,6 +692,7 @@ function render(){
       searchTerm = ''; els.searchInput.value = '';
       buildFilterUI(); buildRiskFilterUI(); render();
     });
+    buildRoadmapUI(filtered);
     return;
   }
   const statusCol = findCol(/^status$/i) || findCol(/status/i);
@@ -694,6 +763,7 @@ function render(){
       const idx = parseInt(tr.getAttribute('data-idx'), 10); expandedIndex = expandedIndex === idx ? null : idx; render();
     });
   });
+  buildRoadmapUI(filtered);
 }
 document.addEventListener('DOMContentLoaded', () => {
   bindEls();
@@ -710,6 +780,11 @@ document.addEventListener('DOMContentLoaded', () => {
     const body = document.getElementById('legendBody');
     body.classList.toggle('open');
     document.getElementById('legendCaret').innerHTML = body.classList.contains('open') ? '&#9662;' : '&#9656;';
+  });
+  document.getElementById('roadmapToggle').addEventListener('click', () => {
+    const body = document.getElementById('roadmapBody');
+    body.classList.toggle('open');
+    document.getElementById('roadmapCaret').innerHTML = body.classList.contains('open') ? '&#9662;' : '&#9656;';
   });
   els.ageMinSlider.addEventListener('input', (e) => { ageMin = Math.min(parseInt(e.target.value,10), ageMax); e.target.value = ageMin; els.ageMinLabel.textContent = ageMin; render(); });
   els.ageMaxSlider.addEventListener('input', (e) => { ageMax = Math.max(parseInt(e.target.value,10), ageMin); e.target.value = ageMax; els.ageMaxLabel.textContent = ageMax; render(); });

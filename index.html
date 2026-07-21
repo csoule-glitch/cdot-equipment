@@ -18,25 +18,24 @@
   *{box-sizing:border-box;}
   html,body{margin:0;padding:0;}
   body{background:var(--paper); color:var(--ink); font-family:'IBM Plex Sans', sans-serif; -webkit-font-smoothing:antialiased; font-weight:400;}
-  .wrap{max-width:1140px; margin:0 auto; padding:56px 28px 90px;}
+  .wrap{max-width:1220px; margin:0 auto; padding:56px 28px 90px;}
 
   .header{display:flex; flex-wrap:wrap; justify-content:space-between; align-items:flex-end; gap:20px; border-bottom:1px solid var(--line); padding-bottom:28px; margin-bottom:32px;}
-  .eyebrow{font-family:'IBM Plex Sans', sans-serif; font-size:12px; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); margin:0 0 10px;}
+  .eyebrow{font-size:12px; font-weight:500; letter-spacing:0.12em; text-transform:uppercase; color:var(--accent); margin:0 0 10px;}
   .title{font-family:'Fraunces', serif; font-weight:400; font-size:38px; line-height:1.08; margin:0; color:var(--ink); letter-spacing:-0.01em;}
   .title em{font-style:italic; font-weight:400; color:var(--accent);}
-  .stats-line{font-family:'IBM Plex Sans', sans-serif; font-size:13px; color:var(--muted); margin-top:10px;}
+  .stats-line{font-size:13px; color:var(--muted); margin-top:10px;}
   .sync-block{display:flex; align-items:center; gap:14px; font-size:12.5px; color:var(--muted); flex-wrap:wrap;}
   .dot{width:6px;height:6px;border-radius:50%; background:var(--accent-soft); flex-shrink:0;}
   .dot.error{background:var(--brick);}
   .refresh-btn, .signout-btn{
-    font-family:'IBM Plex Sans', sans-serif; font-size:12.5px; font-weight:500;
-    background:transparent; color:var(--ink); border:1px solid var(--line);
+    font-size:12.5px; font-weight:500; background:transparent; color:var(--ink); border:1px solid var(--line);
     padding:8px 18px; border-radius:999px; cursor:pointer; transition:all 0.15s ease;
   }
   .refresh-btn:hover{background:var(--surface); border-color:var(--ink-soft);}
   .signout-btn{color:var(--brick); border-color:rgba(139,74,66,0.35);}
   .signout-btn:hover{background:rgba(139,74,66,0.06);}
-  .refresh-btn:focus-visible, .chip:focus-visible, .search-input:focus-visible, th button:focus-visible, .legend-toggle:focus-visible, .signout-btn:focus-visible{
+  .refresh-btn:focus-visible, .chip:focus-visible, .search-input:focus-visible, th button:focus-visible, .legend-toggle:focus-visible, .signout-btn:focus-visible, .sidebar-toggle:focus-visible{
     outline:2px solid var(--accent-soft); outline-offset:2px;
   }
 
@@ -46,14 +45,11 @@
   #gsiButtonContainer{margin-top:8px;}
   .gate-error{color:var(--brick); font-size:13px; max-width:460px; border:1px solid rgba(139,74,66,0.3); padding:12px 18px; border-radius:8px; background:rgba(139,74,66,0.05);}
 
-  .security-note{font-size:12px; color:var(--accent-soft); background:rgba(51,81,63,0.06); border:1px solid rgba(51,81,63,0.18); padding:10px 16px; border-radius:8px; margin-bottom:24px;}
+  .security-note{font-size:12px; color:var(--accent-soft); background:rgba(51,81,63,0.06); border:1px solid rgba(51,81,63,0.18); padding:10px 16px; border-radius:8px; margin-bottom:12px;}
+  .it-note{font-size:12px; color:var(--brass); background:rgba(168,130,61,0.07); border:1px solid rgba(168,130,61,0.25); padding:10px 16px; border-radius:8px; margin-bottom:24px;}
 
   .legend-block{margin-bottom:26px; border:1px solid var(--line); border-radius:10px; overflow:hidden;}
-  .legend-toggle{
-    width:100%; display:flex; justify-content:space-between; align-items:center;
-    background:var(--surface); color:var(--ink); border:none;
-    font-size:12.5px; font-weight:500; letter-spacing:0.04em; padding:14px 18px; cursor:pointer;
-  }
+  .legend-toggle{width:100%; display:flex; justify-content:space-between; align-items:center; background:var(--surface); color:var(--ink); border:none; font-size:12.5px; font-weight:500; letter-spacing:0.04em; padding:14px 18px; cursor:pointer;}
   .legend-body{display:none; padding:18px 20px; background:var(--surface); border-top:1px solid var(--line); font-size:13.5px; line-height:1.7; color:var(--ink-soft);}
   .legend-body.open{display:block;}
   .legend-body ul{margin:0; padding-left:18px;}
@@ -62,19 +58,27 @@
   .search-row{margin-bottom:22px;}
   .search-input{
     width:100%; font-family:'Fraunces', serif; font-style:italic; font-weight:400; font-size:21px;
-    background:transparent; border:none; border-bottom:1px solid var(--line);
-    padding:10px 2px 14px; color:var(--ink);
+    background:transparent; border:none; border-bottom:1px solid var(--line); padding:10px 2px 14px; color:var(--ink);
   }
   .search-input::placeholder{color:var(--muted); opacity:0.85;}
 
-  .risk-block{margin-bottom:22px; border:1px solid var(--line); border-radius:10px; padding:18px 20px; background:var(--surface);}
-  .risk-block .filter-label{margin-bottom:12px; display:block;}
-  .risk-chip-row{display:flex; gap:10px; flex-wrap:wrap;}
-  .risk-chip{
-    font-family:'IBM Plex Sans', sans-serif; font-size:13px; font-weight:500;
-    padding:7px 16px; border-radius:999px; cursor:pointer; border:1px solid var(--line);
-    background:transparent; color:var(--ink-soft); transition:all 0.15s ease;
-  }
+  .layout{display:grid; grid-template-columns:270px 1fr; gap:26px; align-items:start;}
+  .layout.collapsed{grid-template-columns:52px 1fr;}
+  .layout.collapsed .sidebar-title, .layout.collapsed .sidebar-body{display:none;}
+  .layout.collapsed .sidebar-header{justify-content:center; border-bottom:none;}
+  .sidebar{border:1px solid var(--line); border-radius:10px; background:var(--surface); position:sticky; top:24px;}
+  .sidebar-header{display:flex; align-items:center; justify-content:space-between; padding:14px 16px; border-bottom:1px solid var(--line);}
+  .sidebar-title{font-size:12.5px; font-weight:500; letter-spacing:0.06em; text-transform:uppercase; color:var(--ink);}
+  .sidebar-toggle{background:none; border:1px solid var(--line); border-radius:8px; width:28px; height:28px; display:flex; align-items:center; justify-content:center; cursor:pointer; color:var(--muted); font-size:13px; flex-shrink:0;}
+  .sidebar-toggle:hover{border-color:var(--ink-soft); color:var(--ink);}
+  .sidebar-body{padding:18px 16px; max-height:calc(100vh - 140px); overflow-y:auto;}
+  .sidebar-section{padding-bottom:18px; margin-bottom:18px; border-bottom:1px solid var(--line-soft);}
+  .sidebar-section:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
+  .main-col{min-width:0;}
+
+  .filter-label{font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); display:block; margin-bottom:10px;}
+  .risk-chip-row{display:flex; gap:8px; flex-wrap:wrap;}
+  .risk-chip{font-size:12.5px; font-weight:500; padding:6px 14px; border-radius:999px; cursor:pointer; border:1px solid var(--line); background:transparent; color:var(--ink-soft); transition:all 0.15s ease;}
   .risk-chip:hover{border-color:var(--ink-soft);}
   .risk-chip.active{color:#fff !important;}
   .risk-chip[data-level="high"].active{background:var(--brick); border-color:var(--brick);}
@@ -82,41 +86,30 @@
   .risk-chip[data-level="low"].active{background:var(--accent); border-color:var(--accent);}
   .risk-chip[data-level="other"].active{background:var(--muted); border-color:var(--muted);}
 
-  .age-block{margin-bottom:22px; border:1px solid var(--line); border-radius:10px; padding:18px 20px; background:var(--surface);}
-  .age-block .filter-label{display:block; margin-bottom:14px;}
-  .age-slider-row{display:flex; gap:30px; flex-wrap:wrap; margin-bottom:14px;}
-  .age-slider-item{display:flex; align-items:center; gap:12px; font-size:12.5px; color:var(--muted);}
-  .age-slider-item input[type="range"]{width:180px; accent-color:var(--accent);}
-  .age-slider-item span{min-width:32px; color:var(--ink); font-weight:500;}
-  .age-unknown-toggle{font-size:12.5px; color:var(--muted); display:flex; align-items:center; gap:8px;}
-  .age-unknown-toggle input{accent-color:var(--accent);}
+  .age-slider-row{display:flex; flex-direction:column; gap:12px; margin-bottom:12px;}
+  .age-slider-item{display:flex; align-items:center; gap:10px; font-size:12.5px; color:var(--muted);}
+  .age-slider-item input[type="range"]{flex:1; accent-color:var(--accent);}
+  .age-slider-item span{min-width:28px; color:var(--ink); font-weight:500;}
+  .age-unknown-toggle{font-size:12px; color:var(--muted); display:flex; align-items:flex-start; gap:8px; line-height:1.4;}
+  .age-unknown-toggle input{accent-color:var(--accent); margin-top:2px;}
   .age-estimated-tag{font-size:11px; color:var(--brass); font-style:italic;}
 
-  .tier-legend{font-size:12px; color:var(--muted); margin-top:14px; line-height:1.8;}
+  .tier-legend{font-size:11.5px; color:var(--muted); margin-top:10px; line-height:1.7;}
   .tier-legend b{color:var(--ink); font-weight:500;}
 
-  .filters{display:flex; flex-direction:column; gap:16px; margin:22px 0 26px;}
-  .filter-group{display:flex; align-items:baseline; gap:12px; flex-wrap:wrap;}
-  .filter-label{font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); min-width:150px;}
-  .chip-row{display:flex; gap:8px; flex-wrap:wrap;}
-  .chip{
-    font-family:'IBM Plex Sans', sans-serif; font-size:12.5px; padding:5px 14px;
-    border:1px solid var(--line); background:transparent; color:var(--ink-soft);
-    border-radius:999px; cursor:pointer; transition:all 0.15s ease;
-  }
+  .filters{display:flex; flex-direction:column; gap:18px;}
+  .filter-group{display:flex; flex-direction:column; gap:8px;}
+  .chip-row{display:flex; gap:6px; flex-wrap:wrap;}
+  .chip{font-size:12px; padding:5px 12px; border:1px solid var(--line); background:transparent; color:var(--ink-soft); border-radius:999px; cursor:pointer; transition:all 0.15s ease;}
   .chip:hover{border-color:var(--ink-soft);}
   .chip.active{background:var(--ink); border-color:var(--ink); color:#fff;}
-  .clear-filters{font-size:12px; color:var(--brick); background:none; border:none; text-decoration:underline; cursor:pointer; padding:0;}
+  .clear-filters{font-size:12px; color:var(--brick); background:none; border:none; text-decoration:underline; cursor:pointer; padding:0; margin-top:6px;}
   .results-line{font-size:12.5px; color:var(--muted); margin-bottom:14px;}
 
   .table-scroll{overflow-x:auto; border:1px solid var(--line); border-radius:10px; background:var(--surface);}
-  table{width:100%; border-collapse:collapse; min-width:600px;}
+  table{width:100%; border-collapse:collapse; min-width:560px;}
   thead th{position:sticky; top:0; background:var(--surface); text-align:left; padding:0; border-bottom:1px solid var(--line); z-index:2;}
-  thead th button{
-    width:100%; text-align:left; background:none; border:none; color:var(--muted);
-    font-size:11.5px; font-weight:500; text-transform:uppercase; letter-spacing:0.07em;
-    padding:16px 18px; cursor:pointer; display:flex; align-items:center; gap:6px;
-  }
+  thead th button{width:100%; text-align:left; background:none; border:none; color:var(--muted); font-size:11.5px; font-weight:500; text-transform:uppercase; letter-spacing:0.07em; padding:16px 18px; cursor:pointer; display:flex; align-items:center; gap:6px;}
   thead th button:hover{color:var(--ink);}
   .sort-arrow{opacity:0.4; font-size:9px;}
   .sort-arrow.active{opacity:1; color:var(--accent);}
@@ -124,7 +117,9 @@
   tbody tr:hover{background:rgba(51,81,63,0.045);}
   tbody td{padding:15px 18px; font-size:13.5px; vertical-align:top; color:var(--ink-soft);}
   .id-cell{font-family:'IBM Plex Mono', monospace; font-size:12px; color:var(--ink);}
-  .decommissioned{text-decoration:line-through; color:var(--muted);}
+  .asset-link{color:var(--ink); text-decoration:none; border-bottom:1px dotted var(--line); transition:color 0.15s ease, border-color 0.15s ease;}
+  .asset-link:hover{color:var(--accent); border-bottom-color:var(--accent);}
+  .link-fallback-tag{font-size:10px; color:var(--muted); margin-left:5px; font-style:italic;}
   .stamp{display:inline-flex; align-items:center; gap:7px; font-size:13px; color:var(--ink-soft);}
   .stamp-dot{width:7px;height:7px;border-radius:50%; flex-shrink:0;}
   .chevron{color:var(--muted); font-size:11px; transition:transform 0.15s ease;}
@@ -134,21 +129,25 @@
   .detail-panel{padding:26px 28px; display:grid; grid-template-columns:repeat(auto-fill, minmax(200px,1fr)); gap:18px 30px;}
   .detail-field dt{font-family:'IBM Plex Mono', monospace; font-size:10px; text-transform:uppercase; letter-spacing:0.07em; color:var(--accent-soft); margin-bottom:5px;}
   .detail-field dd{margin:0; color:var(--paper); font-size:13.5px; line-height:1.5; word-break:break-word;}
+  .life-remaining{font-weight:500;}
+  .life-remaining.warn{color:var(--brass);}
+  .life-remaining.over{color:#D08A80;}
+  .life-remaining.ok{color:var(--accent-soft);}
 
   .empty-state, .error-state, .loading-state{padding:70px 20px; text-align:center; font-size:13.5px; color:var(--muted); border:1px dashed var(--line); border-radius:10px;}
   .error-state{color:var(--brick); border-color:rgba(139,74,66,0.3);}
   footer{margin-top:36px; font-size:12px; color:var(--muted);}
   .hidden{display:none !important;}
 
-  @media (max-width:720px){
+  @media (max-width:900px){
+    .layout{grid-template-columns:1fr;}
+    .sidebar{position:relative; top:0;}
     .title{font-size:27px;}
     thead{display:none;}
     table, tbody, tbody tr, tbody td{display:block; width:100%;}
     tbody tr{padding:14px 18px; border-top:1px solid var(--line-soft);}
     tbody td{padding:3px 0; border:none;}
     .detail-panel{grid-template-columns:1fr;}
-    .filter-label{min-width:0;}
-    .age-slider-item input[type="range"]{width:120px;}
   }
 </style>
 </head>
@@ -178,7 +177,8 @@
     </div>
   </div>
 
-  <p class="security-note">Username and password columns are stripped out before this page ever displays or stores anything. Access is governed entirely by your Google account's existing permission on the sheet.</p>
+  <p class="security-note">Username and password columns are stripped out before this page ever displays or stores anything, from both linked sheets.</p>
+  <p class="it-note hidden" id="itNote"></p>
 
   <div class="legend-block">
     <button class="legend-toggle" id="legendToggle">Sheet legend &amp; conventions <span id="legendCaret">&#9656;</span></button>
@@ -189,34 +189,49 @@
     <input type="text" class="search-input" id="searchInput" placeholder="Search equipment — any field&hellip;">
   </div>
 
-  <div class="risk-block" id="riskBlock">
-    <span class="filter-label">Risk Assessment</span>
-    <div class="risk-chip-row" id="riskChipRow"></div>
+  <div class="layout" id="layout">
+    <aside class="sidebar" id="sidebar">
+      <div class="sidebar-header">
+        <span class="sidebar-title">Filters</span>
+        <button class="sidebar-toggle" id="sidebarToggle" aria-label="Toggle filters">&#8676;</button>
+      </div>
+      <div class="sidebar-body" id="sidebarBody">
+        <div class="sidebar-section" id="riskBlock">
+          <span class="filter-label">Risk Assessment</span>
+          <div class="risk-chip-row" id="riskChipRow"></div>
+        </div>
+        <div class="sidebar-section" id="ageBlock">
+          <span class="filter-label">Equipment Age</span>
+          <div class="age-slider-row">
+            <div class="age-slider-item"><span>Min</span><input type="range" id="ageMinSlider" min="0" max="40" value="0" step="1"><span id="ageMinLabel">0</span></div>
+            <div class="age-slider-item"><span>Max</span><input type="range" id="ageMaxSlider" min="0" max="40" value="40" step="1"><span id="ageMaxLabel">40</span></div>
+          </div>
+          <label class="age-unknown-toggle"><input type="checkbox" id="includeUnknownAge" checked> Include equipment with no purchase date and no usable asset tag</label>
+        </div>
+        <div class="sidebar-section filters" id="filters"></div>
+      </div>
+    </aside>
+    <main class="main-col">
+      <p class="results-line" id="resultsLine"></p>
+      <div id="content"><div class="loading-state">Fetching the registry&hellip;</div></div>
+    </main>
   </div>
 
-  <div class="age-block" id="ageBlock">
-    <span class="filter-label">Equipment Age</span>
-    <div class="age-slider-row">
-      <div class="age-slider-item"><span>Min</span><input type="range" id="ageMinSlider" min="0" max="40" value="0" step="1"><span id="ageMinLabel">0</span></div>
-      <div class="age-slider-item"><span>Max</span><input type="range" id="ageMaxSlider" min="0" max="40" value="40" step="1"><span id="ageMaxLabel">40</span></div>
-    </div>
-    <label class="age-unknown-toggle"><input type="checkbox" id="includeUnknownAge" checked> Include equipment with no purchase date and no usable asset tag</label>
-  </div>
-
-  <div class="filters" id="filters"></div>
-  <p class="results-line" id="resultsLine"></p>
-  <div id="content"><div class="loading-state">Fetching the registry&hellip;</div></div>
   <footer>Data is read live from Google Sheets via your account's own access. Refreshes automatically every 5 minutes. &middot; <span id="lastUpdated"></span></footer>
 </div>
 
 <script>
 const CLIENT_ID = "186946197176-46q3kcqv3b0ii5jhgmjl51lht489m3bq.apps.googleusercontent.com";
 const SPREADSHEET_ID = "159nWwkPuJGSqJTQn1yV8si8pVxz5PFDy1uAjK9Rz5aY";
+const IT_SPREADSHEET_ID = "1KvPby9zvMLaaH1n0e2hku0NxVq7Q7NB9UimWwrZDS_s";
 const SCOPES = "https://www.googleapis.com/auth/spreadsheets.readonly https://www.googleapis.com/auth/userinfo.email";
 const AUTO_REFRESH_MS = 5 * 60 * 1000;
 const MAX_TABLE_COLUMNS = 6;
 const EXCLUDED_COLUMNS = ['username', 'password', 'operational unit (mother asset tag)'];
-const FILTER_EXCLUDE_PATTERNS = [/notes/i, /^sort function$/i];
+const FILTER_ALLOWED_PATTERNS = [
+  /^building$/i, /^status$/i, /bookit service group/i, /anticipated equipment replacement year/i,
+  /broad assigned useful life/i, /actual life expectancy/i, /^monetize\??$/i, /^usage tier$/i
+];
 const HEADER_SCAN_LIMIT = 30;
 
 let accessToken = null, tokenClient = null, sheetTitle = null;
@@ -228,17 +243,19 @@ let riskCol = null, riskFilterValues = new Set();
 let usageTierCol = null, tierLegendPairs = [];
 let ageModel = { dateCol: null, tagCol: null, regression: null };
 let ageMin = 0, ageMax = 40, ageDataMax = 40, includeUnknownAge = true;
+let itMap = {}, itAvailable = false;
 
 const els = {};
 function bindEls(){
   ['gate','gateError','gsiButtonContainer','app','statsLine','syncDot','syncText','whoami',
    'refreshBtn','signoutBtn','searchInput','filters','resultsLine','content','lastUpdated',
-   'legendToggle','legendBody','legendCaret','riskBlock','riskChipRow',
-   'ageMinSlider','ageMaxSlider','ageMinLabel','ageMaxLabel','includeUnknownAge'].forEach(id => els[id] = document.getElementById(id));
+   'legendToggle','legendBody','legendCaret','riskBlock','riskChipRow','itNote',
+   'ageMinSlider','ageMaxSlider','ageMinLabel','ageMaxLabel','includeUnknownAge',
+   'layout','sidebarToggle'].forEach(id => els[id] = document.getElementById(id));
 }
 function escapeHtml(str){ return String(str ?? '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
 function isTruthy(val){ const v = (val || '').toString().trim().toLowerCase(); return v === 'true' || v === 'yes' || v === 'y' || v === '1'; }
-function looksLikeStatusHeader(h){ return /status|condition|state|category|type|building|room|group|tag/i.test(h); }
+function looksLikeStatusHeader(h){ return /status|category|type/i.test(h); }
 const COLOR_WORD_MAP = { red:'#8B4A42', green:'#33513F', yellow:'#A8823D', amber:'#A8823D', orange:'#8B5A3C', blue:'#3E5A73', gray:'#7A7D76', grey:'#7A7D76' };
 function colorForValue(value){
   const key = (value || '').toString().trim().toLowerCase();
@@ -268,10 +285,7 @@ function buildTierLegend(matrix, headerIdx){
     const cell = (matrix[i][tierColIdx] || '').toString().trim();
     if (/^[1-9]$/.test(cell)){
       let desc = '';
-      for (let c = tierColIdx + 1; c < matrix[i].length; c++){
-        const v = (matrix[i][c] || '').toString().trim();
-        if (v) { desc = v; break; }
-      }
+      for (let c = tierColIdx + 1; c < matrix[i].length; c++){ const v = (matrix[i][c] || '').toString().trim(); if (v) { desc = v; break; } }
       if (desc) pairs.push({ tier: cell, desc });
     }
   }
@@ -326,7 +340,13 @@ function annotateAges(){
   if (ageMax > ageDataMax || ageMax === 40) { ageMax = ageDataMax; els.ageMaxSlider.value = ageDataMax; els.ageMaxLabel.textContent = ageDataMax; }
 }
 
-window.onload = () => { bindEls(); if (window.google && google.accounts) initGSI(); };
+window.onload = () => {
+  bindEls();
+  if (localStorage.getItem('cdot-sidebar-collapsed') === '1'){
+    els.layout.classList.add('collapsed'); els.sidebarToggle.innerHTML = '&#8677;';
+  }
+  if (window.google && google.accounts) initGSI();
+};
 function initGSI(){
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID, scope: SCOPES,
@@ -348,23 +368,67 @@ async function onSignedIn(){
   loadData();
   setInterval(() => tokenClient.requestAccessToken({ prompt: '' }), AUTO_REFRESH_MS);
 }
-async function sheetsApiFetch(path){
-  const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + SPREADSHEET_ID + path, { headers: { Authorization: 'Bearer ' + accessToken } });
+async function sheetsApiFetch(spreadsheetId, path){
+  const res = await fetch('https://sheets.googleapis.com/v4/spreadsheets/' + spreadsheetId + path, { headers: { Authorization: 'Bearer ' + accessToken } });
   if (res.status === 401) throw { code: 401, message: 'Session expired. Please sign in again.' };
-  if (res.status === 403) throw { code: 403, message: "Your Google account doesn't have access to this sheet. Ask the sheet owner to share it with you." };
+  if (res.status === 403) throw { code: 403, message: "This Google account doesn't have access to that sheet." };
   if (!res.ok) throw { code: res.status, message: 'Sheets API error (HTTP ' + res.status + ')' };
   return res.json();
+}
+async function loadItInventory(){
+  try {
+    const meta = await sheetsApiFetch(IT_SPREADSHEET_ID, '?fields=sheets.properties(title,sheetId)');
+    const title = meta.sheets && meta.sheets[0] && meta.sheets[0].properties.title;
+    if (!title) throw new Error('No tabs found in linked sheet');
+    const range = encodeURIComponent(title + '!A1:ZZ5000');
+    const valuesResp = await sheetsApiFetch(IT_SPREADSHEET_ID, '/values/' + range);
+    const matrix = valuesResp.values || [];
+    if (!matrix.length) throw new Error('Linked sheet is empty');
+    const headerIdx = detectHeaderRow(matrix);
+    const rawHeaderRow = matrix[headerIdx];
+    const colIndexes = []; const cleanHeaders = [];
+    rawHeaderRow.forEach((h, idx) => {
+      const name = (h || '').toString().trim();
+      if (!name) return;
+      if (EXCLUDED_COLUMNS.includes(name.toLowerCase())) return;
+      colIndexes.push(idx); cleanHeaders.push(name);
+    });
+    const tagColIdx = cleanHeaders.findIndex(h => /asset tag/i.test(h));
+    const nameColIdx = cleanHeaders.findIndex(h => /computer name/i.test(h));
+    const svcColIdx = cleanHeaders.findIndex(h => /computer service tag/i.test(h));
+    if (tagColIdx === -1) throw new Error('No Asset Tag column found in linked sheet');
+    const newMap = {};
+    for (let r = headerIdx + 1; r < matrix.length; r++){
+      const rawRow = matrix[r];
+      if (!rawRow || rawRow.every(c => (c||'').toString().trim() === '')) continue;
+      const rowVals = colIndexes.map(ci => rawRow[ci] || '');
+      const tag = (rowVals[tagColIdx] || '').toString().trim();
+      if (!tag) continue;
+      newMap[tag] = {
+        computerName: nameColIdx > -1 ? (rowVals[nameColIdx]||'').toString().trim() : '',
+        computerServiceTag: svcColIdx > -1 ? (rowVals[svcColIdx]||'').toString().trim() : ''
+      };
+    }
+    itMap = newMap;
+    itAvailable = true;
+    els.itNote.classList.add('hidden');
+  } catch (err) {
+    itAvailable = false;
+    els.itNote.textContent = "Linked IT computer inventory isn't accessible with this Google account, so those fields are left out. Everything else still works.";
+    els.itNote.classList.remove('hidden');
+    console.warn('IT inventory unavailable:', err);
+  }
 }
 async function loadData(){
   els.syncText.textContent = 'Syncing…'; els.syncDot.classList.remove('error');
   try {
     if (!sheetTitle){
-      const meta = await sheetsApiFetch('?fields=sheets.properties(title,sheetId)');
+      const meta = await sheetsApiFetch(SPREADSHEET_ID, '?fields=sheets.properties(title,sheetId)');
       sheetTitle = meta.sheets && meta.sheets[0] && meta.sheets[0].properties.title;
       if (!sheetTitle) throw { code: 0, message: 'No tabs found in this spreadsheet.' };
     }
     const range = encodeURIComponent(sheetTitle + '!A1:ZZ5000');
-    const valuesResp = await sheetsApiFetch('/values/' + range);
+    const valuesResp = await sheetsApiFetch(SPREADSHEET_ID, '/values/' + range);
     const matrix = valuesResp.values || [];
     if (!matrix.length) throw { code: 0, message: 'The sheet appears to be empty.' };
     const headerIdx = detectHeaderRow(matrix);
@@ -390,15 +454,17 @@ async function loadData(){
       rows.push(obj);
     }
 
+    const strikeColName = findCol(/strikethrough/i);
+    if (strikeColName) rows = rows.filter(r => !isTruthy(r[strikeColName]));
+
     riskCol = findCol(/risk assessment/i);
     usageTierCol = findCol(/^usage tier$/i);
     annotateAges();
     computeColumnRoles();
-    if (riskCol) categoricalCols = categoricalCols.filter(c => c !== riskCol);
-    categoricalCols = categoricalCols.filter(c => !FILTER_EXCLUDE_PATTERNS.some(p => p.test(c)));
     buildFilterUI();
     buildRiskFilterUI();
     buildLegendUI();
+    await loadItInventory();
     render();
 
     els.syncText.textContent = 'Synced';
@@ -424,6 +490,7 @@ function riskLevel(value){
 }
 function buildRiskFilterUI(){
   if (!riskCol){ document.getElementById('riskBlock').classList.add('hidden'); return; }
+  document.getElementById('riskBlock').classList.remove('hidden');
   const values = [...new Set(rows.map(r => (r[riskCol]||'').toString().trim()).filter(Boolean))];
   values.sort((a,b) => { const order = {high:0,moderate:1,low:2,other:3}; return order[riskLevel(a)] - order[riskLevel(b)]; });
   els.riskChipRow.innerHTML = '';
@@ -438,12 +505,7 @@ function buildRiskFilterUI(){
   });
 }
 function computeColumnRoles(){
-  categoricalCols = [];
-  headers.forEach(h => {
-    const values = rows.map(r => (r[h] || '').toString().trim()).filter(Boolean);
-    const unique = new Set(values);
-    if (unique.size > 1 && unique.size <= 12 && unique.size <= values.length * 0.6) categoricalCols.push(h);
-  });
+  categoricalCols = headers.filter(h => FILTER_ALLOWED_PATTERNS.some(p => p.test(h)));
   const scored = headers.map(h => ({ h, score: (/^(id|name|asset)/i.test(h) ? 3 : 0) + (looksLikeStatusHeader(h) ? 2 : 0) }));
   scored.sort((a,b) => b.score - a.score);
   primaryCols = scored.slice(0, MAX_TABLE_COLUMNS).map(s => s.h);
@@ -454,6 +516,7 @@ function buildFilterUI(){
   categoricalCols.forEach(col => {
     if (!filters[col]) filters[col] = new Set();
     const values = [...new Set(rows.map(r => (r[col]||'').toString().trim()).filter(Boolean))].sort();
+    if (!values.length) return;
     const group = document.createElement('div'); group.className = 'filter-group';
     const label = document.createElement('span'); label.className = 'filter-label'; label.textContent = col;
     group.appendChild(label);
@@ -470,7 +533,7 @@ function buildFilterUI(){
       const legendDiv = document.createElement('div');
       legendDiv.className = 'tier-legend';
       legendDiv.innerHTML = tierLegendPairs.map(p => `<b>${escapeHtml(p.tier)}</b> = ${escapeHtml(p.desc)}`).join(' &nbsp;&middot;&nbsp; ');
-      els.filters.appendChild(legendDiv);
+      group.appendChild(legendDiv);
     }
   });
   const anyActive = Object.values(filters).some(s => s.size > 0);
@@ -517,9 +580,12 @@ function render(){
   }
   const statusCol = findCol(/^status$/i) || findCol(/status/i);
   const colorCol = findCol(/color code/i);
-  const strikeCol = findCol(/strikethrough/i);
   const nameCol = headers[0];
   const dateCol = ageModel.dateCol;
+  const vendorUrlCol = findCol(/vendor url|product url|vendor link|product link/i);
+  const assignedLifeCol = findCol(/broad assigned useful life/i);
+  const actualLifeCol = findCol(/actual life expectancy/i);
+  const tagColForRow = findCol(/^asset tag$/i) || findCol(/asset tag/i);
   let html = '<div class="table-scroll"><table><thead><tr>';
   primaryCols.forEach(col => {
     const active = sortState.col === col;
@@ -527,14 +593,18 @@ function render(){
   });
   html += '<th style="width:36px;"></th></tr></thead><tbody>';
   filtered.forEach((r, i) => {
-    const decommissioned = strikeCol && isTruthy(r[strikeCol]);
     html += `<tr class="data-row ${expandedIndex === i ? 'expanded':''}" data-idx="${i}">`;
     primaryCols.forEach((col) => {
       const val = (r[col]||'').toString(); const isNameCol = col === nameCol;
       if (col === statusCol && val) {
         const color = colorCol && r[colorCol] ? colorForValue(r[colorCol]) : colorForValue(val);
         html += `<td><span class="stamp"><span class="stamp-dot" style="background:${color};"></span>${escapeHtml(val)}</span></td>`;
-      } else if (isNameCol) { html += `<td class="id-cell ${decommissioned ? 'decommissioned':''}">${escapeHtml(val)}</td>`; }
+      } else if (isNameCol) {
+        const directUrl = vendorUrlCol ? (r[vendorUrlCol]||'').toString().trim() : '';
+        const hasDirect = /^https?:\/\//i.test(directUrl);
+        const linkUrl = hasDirect ? directUrl : ('https://www.google.com/search?q=' + encodeURIComponent(val));
+        html += `<td class="id-cell"><a class="asset-link" href="${escapeHtml(linkUrl)}" target="_blank" rel="noopener noreferrer">${escapeHtml(val)}</a>${hasDirect ? '' : '<span class="link-fallback-tag">search</span>'}</td>`;
+      }
       else if (col === dateCol && !val && r._ageYears !== null && r._ageYears !== undefined) {
         html += `<td>&mdash; <span class="age-estimated-tag">~${r._ageYears.toFixed(1)} yrs (estimated)</span></td>`;
       } else { html += `<td>${escapeHtml(val)}</td>`; }
@@ -545,6 +615,23 @@ function render(){
       headers.forEach(h => { html += `<div class="detail-field"><dt>${escapeHtml(h)}</dt><dd>${escapeHtml(r[h]) || '—'}</dd></div>`; });
       const ageLabel = r._ageYears !== null && r._ageYears !== undefined ? r._ageYears.toFixed(1) + ' years' + (r._ageEstimated ? ' (estimated from asset tag)' : ' (from purchase date)') : 'Unknown';
       html += `<div class="detail-field"><dt>Estimated Age</dt><dd>${escapeHtml(ageLabel)}</dd></div>`;
+      const assignedVal = parseFloat(r[assignedLifeCol]);
+      const actualVal = parseFloat(r[actualLifeCol]);
+      const expectedLife = !isNaN(assignedVal) ? assignedVal : (!isNaN(actualVal) ? actualVal : null);
+      if (expectedLife !== null && r._ageYears !== null && r._ageYears !== undefined){
+        const remaining = expectedLife - r._ageYears;
+        const cls = remaining < 0 ? 'over' : (remaining < 2 ? 'warn' : 'ok');
+        const label = remaining < 0 ? `${Math.abs(remaining).toFixed(1)} yrs past expected life` : `${remaining.toFixed(1)} yrs remaining of ${expectedLife} assigned`;
+        html += `<div class="detail-field"><dt>Life Status</dt><dd class="life-remaining ${cls}">${escapeHtml(label)}</dd></div>`;
+      }
+      if (itAvailable && tagColForRow) {
+        const tagVal = (r[tagColForRow]||'').toString().trim();
+        const itRow = tagVal ? itMap[tagVal] : null;
+        if (itRow && (itRow.computerName || itRow.computerServiceTag)) {
+          if (itRow.computerName) html += `<div class="detail-field"><dt>Computer Name (IT inventory)</dt><dd>${escapeHtml(itRow.computerName)}</dd></div>`;
+          if (itRow.computerServiceTag) html += `<div class="detail-field"><dt>Computer Service Tag (IT inventory)</dt><dd>${escapeHtml(itRow.computerServiceTag)}</dd></div>`;
+        }
+      }
       html += '</dl></td></tr>';
     }
   });
@@ -554,7 +641,10 @@ function render(){
     btn.addEventListener('click', () => { const col = btn.getAttribute('data-sort'); if (sortState.col === col) sortState.dir *= -1; else { sortState.col = col; sortState.dir = 1; } render(); });
   });
   content.querySelectorAll('tr.data-row').forEach(tr => {
-    tr.addEventListener('click', () => { const idx = parseInt(tr.getAttribute('data-idx'), 10); expandedIndex = expandedIndex === idx ? null : idx; render(); });
+    tr.addEventListener('click', (e) => {
+      if (e.target.closest('a')) return;
+      const idx = parseInt(tr.getAttribute('data-idx'), 10); expandedIndex = expandedIndex === idx ? null : idx; render();
+    });
   });
 }
 document.addEventListener('DOMContentLoaded', () => {
@@ -576,6 +666,11 @@ document.addEventListener('DOMContentLoaded', () => {
   els.ageMinSlider.addEventListener('input', (e) => { ageMin = Math.min(parseInt(e.target.value,10), ageMax); e.target.value = ageMin; els.ageMinLabel.textContent = ageMin; render(); });
   els.ageMaxSlider.addEventListener('input', (e) => { ageMax = Math.max(parseInt(e.target.value,10), ageMin); e.target.value = ageMax; els.ageMaxLabel.textContent = ageMax; render(); });
   els.includeUnknownAge.addEventListener('change', (e) => { includeUnknownAge = e.target.checked; render(); });
+  els.sidebarToggle.addEventListener('click', () => {
+    const collapsed = els.layout.classList.toggle('collapsed');
+    localStorage.setItem('cdot-sidebar-collapsed', collapsed ? '1' : '0');
+    els.sidebarToggle.innerHTML = collapsed ? '&#8677;' : '&#8676;';
+  });
 });
 </script>
 </body>

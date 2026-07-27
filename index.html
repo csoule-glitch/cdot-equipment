@@ -288,8 +288,9 @@ const OLDEST_KNOWN_PURCHASE_MS = new Date(2009, 6, 1).getTime();
 const COMPUTED_EXPORT_FIELDS = [
   'Estimated Age (years)', 'Life Remaining (years)',
   'Computer Name (IT inventory)', 'Computer Service Tag (IT inventory)',
-  'Computer Name (Automation Sheet)', 'IP Address (Automation Sheet)', 'COM Port (Automation Sheet)',
-  'Cellario Name (Automation Sheet)', 'System/Location (Automation Sheet)', 'Operating System (Automation Sheet)'
+  'Computer Name (Automation Sheet)', 'Status (Automation Sheet)', 'IP Address (Automation Sheet)',
+  'MAC Address (Automation Sheet)', 'COM Port (Automation Sheet)',
+  'System/Location (Automation Sheet)', 'Operating System (Automation Sheet)'
 ];
 
 let accessToken = null, tokenClient = null, sheetTitle = null, hasSignedInOnce = false, tokenRefreshTimer = null;
@@ -534,14 +535,16 @@ async function loadAutomationInventory(){
       if (EXCLUDED_COLUMNS.includes(name.toLowerCase())) return;
       colIndexes.push(idx); cleanHeaders.push(name);
     });
-    const idColIdx = cleanHeaders.findIndex(h => /broad id/i.test(h));
+    let idColIdx = cleanHeaders.findIndex(h => /asset tag/i.test(h));
+    if (idColIdx === -1) idColIdx = cleanHeaders.findIndex(h => /broad id/i.test(h));
     const computerNameColIdx = cleanHeaders.findIndex(h => /computer name/i.test(h));
+    const statusColIdx = cleanHeaders.findIndex(h => /^status$/i.test(h));
     const ipColIdx = cleanHeaders.findIndex(h => /ip address/i.test(h));
+    const macColIdx = cleanHeaders.findIndex(h => /mac address/i.test(h));
     const comPortColIdx = cleanHeaders.findIndex(h => /com port/i.test(h));
-    const cellarioColIdx = cleanHeaders.findIndex(h => /cellario name/i.test(h));
-    const sysLocColIdx = cleanHeaders.findIndex(h => /system.*location/i.test(h));
+    const sysLocColIdx = cleanHeaders.findIndex(h => /system\s*\/?\s*location/i.test(h));
     const osColIdx = cleanHeaders.findIndex(h => /operating system/i.test(h));
-    if (idColIdx === -1) throw new Error('No Broad ID column found in linked automation sheet');
+    if (idColIdx === -1) throw new Error('No Asset Tag / Broad ID column found in linked automation sheet');
     const newMap = {};
     for (let r = headerIdx + 1; r < matrix.length; r++){
       const rawRow = matrix[r];
@@ -551,9 +554,10 @@ async function loadAutomationInventory(){
       if (!id) continue;
       newMap[id] = {
         computerName: computerNameColIdx > -1 ? (rowVals[computerNameColIdx]||'').toString().trim() : '',
+        status: statusColIdx > -1 ? (rowVals[statusColIdx]||'').toString().trim() : '',
         ipAddress: ipColIdx > -1 ? (rowVals[ipColIdx]||'').toString().trim() : '',
+        macAddress: macColIdx > -1 ? (rowVals[macColIdx]||'').toString().trim() : '',
         comPort: comPortColIdx > -1 ? (rowVals[comPortColIdx]||'').toString().trim() : '',
-        cellarioName: cellarioColIdx > -1 ? (rowVals[cellarioColIdx]||'').toString().trim() : '',
         systemLocation: sysLocColIdx > -1 ? (rowVals[sysLocColIdx]||'').toString().trim() : '',
         operatingSystem: osColIdx > -1 ? (rowVals[osColIdx]||'').toString().trim() : ''
       };
@@ -797,9 +801,10 @@ function getRowExportValue(r, field){
     const autoRow = tagVal ? automationMap[tagVal] : null;
     if (!autoRow) return '';
     if (field.startsWith('Computer Name')) return autoRow.computerName||'';
+    if (field.startsWith('Status')) return autoRow.status||'';
     if (field.startsWith('IP Address')) return autoRow.ipAddress||'';
+    if (field.startsWith('MAC Address')) return autoRow.macAddress||'';
     if (field.startsWith('COM Port')) return autoRow.comPort||'';
-    if (field.startsWith('Cellario Name')) return autoRow.cellarioName||'';
     if (field.startsWith('System/Location')) return autoRow.systemLocation||'';
     if (field.startsWith('Operating System')) return autoRow.operatingSystem||'';
     return '';
@@ -925,9 +930,10 @@ function render(){
           const autoRow = tagValLinked ? automationMap[tagValLinked] : null;
           if (autoRow) {
             if (autoRow.computerName) html += `<div class="detail-field"><dt>Computer Name (Automation Sheet)</dt><dd>${escapeHtml(autoRow.computerName)}</dd></div>`;
+            if (autoRow.status) html += `<div class="detail-field"><dt>Status (Automation Sheet)</dt><dd>${escapeHtml(autoRow.status)}</dd></div>`;
             if (autoRow.ipAddress) html += `<div class="detail-field"><dt>IP Address (Automation Sheet)</dt><dd>${escapeHtml(autoRow.ipAddress)}</dd></div>`;
+            if (autoRow.macAddress) html += `<div class="detail-field"><dt>MAC Address (Automation Sheet)</dt><dd>${escapeHtml(autoRow.macAddress)}</dd></div>`;
             if (autoRow.comPort) html += `<div class="detail-field"><dt>COM Port (Automation Sheet)</dt><dd>${escapeHtml(autoRow.comPort)}</dd></div>`;
-            if (autoRow.cellarioName) html += `<div class="detail-field"><dt>Cellario Name (Automation Sheet)</dt><dd>${escapeHtml(autoRow.cellarioName)}</dd></div>`;
             if (autoRow.systemLocation) html += `<div class="detail-field"><dt>System/Location (Automation Sheet)</dt><dd>${escapeHtml(autoRow.systemLocation)}</dd></div>`;
             if (autoRow.operatingSystem) html += `<div class="detail-field"><dt>Operating System (Automation Sheet)</dt><dd>${escapeHtml(autoRow.operatingSystem)}</dd></div>`;
           }

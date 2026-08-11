@@ -438,8 +438,15 @@ function initGSI(){
   tokenClient = google.accounts.oauth2.initTokenClient({
     client_id: CLIENT_ID, scope: SCOPES,
     callback: (resp) => {
-      if (resp.error){ showGateError('Sign-in failed: ' + resp.error); return; }
+      const note = document.getElementById('autoSigninNote');
+      if (note) note.remove();
+      if (resp.error){
+        document.getElementById('gsiButtonContainer').classList.remove('hidden');
+        showGateError('Sign-in failed: ' + resp.error);
+        return;
+      }
       accessToken = resp.access_token;
+      localStorage.setItem('cdot-has-signed-in', '1');
       scheduleTokenRefresh(resp.expires_in);
       if (!hasSignedInOnce){ hasSignedInOnce = true; onSignedIn(); }
     },
@@ -449,6 +456,17 @@ function initGSI(){
   btn.textContent = 'Sign in with Google';
   btn.addEventListener('click', () => tokenClient.requestAccessToken({ prompt: 'consent' }));
   document.getElementById('gsiButtonContainer').appendChild(btn);
+
+  if (localStorage.getItem('cdot-has-signed-in') === '1'){
+    document.getElementById('gsiButtonContainer').classList.add('hidden');
+    const note = document.createElement('p');
+    note.id = 'autoSigninNote';
+    note.style.color = 'var(--muted)';
+    note.style.fontSize = '13px';
+    note.textContent = 'Signing you back in…';
+    document.querySelector('.gate p').insertAdjacentElement('afterend', note);
+    tokenClient.requestAccessToken({ prompt: '' });
+  }
 }
 function scheduleTokenRefresh(expiresInSeconds){
   if (tokenRefreshTimer) clearTimeout(tokenRefreshTimer);
@@ -987,6 +1005,7 @@ document.addEventListener('DOMContentLoaded', () => {
     if (accessToken) google.accounts.oauth2.revoke(accessToken, () => {});
     if (tokenRefreshTimer) clearTimeout(tokenRefreshTimer);
     accessToken = null; sheetTitle = null; rows = []; headers = []; hasSignedInOnce = false;
+    localStorage.removeItem('cdot-has-signed-in');
     document.getElementById('app').classList.add('hidden');
     document.getElementById('gate').classList.remove('hidden');
     document.getElementById('gateError').classList.add('hidden');

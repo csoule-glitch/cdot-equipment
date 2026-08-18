@@ -232,7 +232,7 @@
       <button class="signout-btn" id="signoutBtn">Sign out</button>
     </div>
     <div class="modal-overlay hidden" id="settingsOverlay">
-  <div class="modal-card">
+    <div class="modal-card">
     <div class="modal-header">
       <span class="modal-title">Settings</span>
       <button class="modal-close" id="settingsClose" aria-label="Close settings">&times;</button>
@@ -1121,19 +1121,6 @@ document.addEventListener('DOMContentLoaded', () => {
       exportFieldState[h] = true;
     });
     buildExportUI();
-    updateSettingsRadios(getStoredThemePref());
-  document.getElementById('settingsBtn').addEventListener('click', () => {
-  document.getElementById('settingsOverlay').classList.remove('hidden');
-    });
-  document.getElementById('settingsClose').addEventListener('click', () => {
-  document.getElementById('settingsOverlay').classList.add('hidden');
-    });
-  document.getElementById('settingsOverlay').addEventListener('click', (e) => {
-  if (e.target.id === 'settingsOverlay') document.getElementById('settingsOverlay').classList.add('hidden');
-    });
-  document.querySelectorAll('input[name="theme"]').forEach(radio => {
-  radio.addEventListener('change', (e) => setThemePreference(e.target.value));
-    });
   });
   document.getElementById('exportSelectNone').addEventListener('click', () => {
     Object.keys(exportFieldState).forEach(k => exportFieldState[k] = false);
@@ -1147,6 +1134,19 @@ document.addEventListener('DOMContentLoaded', () => {
     const collapsed = els.layout.classList.toggle('collapsed');
     localStorage.setItem('cdot-sidebar-collapsed', collapsed ? '1' : '0');
     els.sidebarToggle.innerHTML = collapsed ? '&#8677;' : '&#8656;';
+  updateSettingsRadios(getStoredThemePref());
+  document.getElementById('settingsBtn').addEventListener('click', () => {
+  document.getElementById('settingsOverlay').classList.remove('hidden');
+    });
+  document.getElementById('settingsClose').addEventListener('click', () => {
+  document.getElementById('settingsOverlay').classList.add('hidden');
+    });
+  document.getElementById('settingsOverlay').addEventListener('click', (e) => {
+  if (e.target.id === 'settingsOverlay') document.getElementById('settingsOverlay').classList.add('hidden');
+    });
+  document.querySelectorAll('input[name="theme"]').forEach(radio => {
+  radio.addEventListener('change', (e) => setThemePreference(e.target.value));
+    });
   });
 });
 </script>

@@ -441,7 +441,6 @@ function initGSI(){
       const note = document.getElementById('autoSigninNote');
       if (note) note.remove();
       if (resp.error){
-        document.getElementById('gsiButtonContainer').classList.remove('hidden');
         showGateError('Sign-in failed: ' + resp.error);
         return;
       }
@@ -454,18 +453,26 @@ function initGSI(){
   const btn = document.createElement('button');
   btn.className = 'refresh-btn'; btn.style.padding = '12px 24px'; btn.style.fontSize = '13.5px';
   btn.textContent = 'Sign in with Google';
-  btn.addEventListener('click', () => tokenClient.requestAccessToken({ prompt: 'consent' }));
+  btn.addEventListener('click', () => {
+    const note = document.getElementById('autoSigninNote');
+    if (note) note.remove();
+    tokenClient.requestAccessToken({ prompt: 'consent' });
+  });
   document.getElementById('gsiButtonContainer').appendChild(btn);
 
   if (localStorage.getItem('cdot-has-signed-in') === '1'){
-    document.getElementById('gsiButtonContainer').classList.add('hidden');
     const note = document.createElement('p');
     note.id = 'autoSigninNote';
     note.style.color = 'var(--muted)';
     note.style.fontSize = '13px';
-    note.textContent = 'Signing you back in…';
+    note.textContent = 'Signing you back in automatically…';
     document.querySelector('.gate p').insertAdjacentElement('afterend', note);
-    tokenClient.requestAccessToken({ prompt: '' });
+    setTimeout(() => { const n = document.getElementById('autoSigninNote'); if (n) n.remove(); }, 4000);
+    try {
+      tokenClient.requestAccessToken({ prompt: '' });
+    } catch (e) {
+      const n = document.getElementById('autoSigninNote'); if (n) n.remove();
+    }
   }
 }
 function scheduleTokenRefresh(expiresInSeconds){
@@ -1004,11 +1011,12 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('signoutBtn').addEventListener('click', () => {
     if (accessToken) google.accounts.oauth2.revoke(accessToken, () => {});
     if (tokenRefreshTimer) clearTimeout(tokenRefreshTimer);
+    localStorage.removeItem('cdot-has-signed-in');
     accessToken = null; sheetTitle = null; rows = []; headers = []; hasSignedInOnce = false;
     localStorage.removeItem('cdot-has-signed-in');
-    document.getElementById('app').classList.add('hidden');
-    document.getElementById('gate').classList.remove('hidden');
-    document.getElementById('gateError').classList.add('hidden');
+  document.getElementById('app').classList.add('hidden');
+  document.getElementById('gate').classList.remove('hidden');
+  document.getElementById('gateError').classList.add('hidden');
   });
   document.getElementById('legendToggle').addEventListener('click', () => {
     const body = document.getElementById('legendBody');

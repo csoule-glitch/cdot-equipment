@@ -664,7 +664,6 @@ async function loadData(){
     buildRiskFilterUI();
     buildVendorDropdown();
     buildExportUI();
-    buildExportUI();
     render();
 
     els.syncText.textContent = 'Synced';
@@ -756,7 +755,6 @@ function computeColumnRoles(){
   if (!primaryCols.length) primaryCols = tableHeaders.slice(0, MAX_TABLE_COLUMNS);
   if (assignedLifeCol || actualLifeCol) primaryCols.push(LIFE_COL_KEY);
   if (findCol(/^vendor$/i)) primaryCols.push(findCol(/^vendor$/i));
-}
 }
 function buildFilterUI(){
   els.filters.innerHTML = '';

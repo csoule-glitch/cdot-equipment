@@ -98,6 +98,15 @@
   .sidebar-section:last-child{border-bottom:none; margin-bottom:0; padding-bottom:0;}
   .main-col{min-width:0;}
 
+  .dropdown-filter{position:relative;}
+  .dropdown-filter-btn{width:100%; display:flex; justify-content:space-between; align-items:center; padding:8px 12px; border:1px solid var(--line); border-radius:8px; background:var(--surface); color:var(--ink-soft); font-size:12.5px; cursor:pointer;}
+  .dropdown-filter-btn:hover{border-color:var(--brand);}
+  .dropdown-caret{color:var(--muted); font-size:10px;}
+  .dropdown-filter-panel{position:absolute; top:calc(100% + 6px); left:0; right:0; background:var(--surface); border:1px solid var(--line); border-radius:8px; padding:8px; max-height:220px; overflow-y:auto; z-index:10;}
+  .dropdown-filter-panel.hidden{display:none;}
+  .dropdown-checkbox-item{display:flex; align-items:center; gap:8px; padding:5px 4px; font-size:12.5px; color:var(--ink-soft); cursor:pointer;}
+  .dropdown-checkbox-item input{accent-color:var(--brand); flex-shrink:0;}
+  
   .filter-label{font-size:12px; font-weight:500; text-transform:uppercase; letter-spacing:0.08em; color:var(--muted); display:block; margin-bottom:10px;}
   .filter-caption{font-size:11px; color:var(--muted); margin:-6px 0 10px; font-style:italic;}
   .risk-chip-row{display:flex; gap:8px; flex-wrap:wrap;}
@@ -255,6 +264,16 @@
           </div>
           <label class="age-unknown-toggle"><input type="checkbox" id="includeUnknownAge" checked> Include equipment with no purchase date and no usable asset tag</label>
         </div>
+        <div class="sidebar-section hidden" id="vendorBlock">
+          <span class="filter-label">Vendor</span>
+          <div class="dropdown-filter">
+            <button class="dropdown-filter-btn" id="vendorDropdownBtn" type="button">
+              <span id="vendorDropdownLabel">All vendors</span>
+              <span class="dropdown-caret">&#9662;</span>
+            </button>
+          <div class="dropdown-filter-panel hidden" id="vendorDropdownPanel"></div>
+          </div>
+        </div>
         <div class="sidebar-section filters" id="filters"></div>
       </div>
     </aside>
@@ -299,6 +318,7 @@ let sortState = { col: null, dir: 1 };
 let expandedIndex = null, searchTerm = '', legendItems = [];
 
 let riskCol = null, riskFilterValues = new Set();
+let vendorFilterValues = new Set();
 let usageTierCol = null, tierLegendPairs = [];
 let assignedLifeCol = null, actualLifeCol = null;
 let ageModel = { dateCol: null, tagCol: null, regression: null };
@@ -642,6 +662,8 @@ async function loadData(){
     await loadItInventory();
     await loadAutomationInventory();
     buildRiskFilterUI();
+    buildVendorDropdown();
+    buildExportUI();
     buildExportUI();
     render();
 
@@ -688,6 +710,38 @@ function buildRiskFilterUI(){
     chip.addEventListener('click', () => { if (riskFilterValues.has(key)) riskFilterValues.delete(key); else riskFilterValues.add(key); buildRiskFilterUI(); render(); });
     els.riskChipRow.appendChild(chip);
   });
+function buildVendorDropdown(){
+  const vendorCol = findCol(/^vendor$/i);
+  const block = document.getElementById('vendorBlock');
+  if (!vendorCol) { block.classList.add('hidden'); return; }
+  block.classList.remove('hidden');
+  const values = [...new Set(rows.map(r => (r[vendorCol]||'').toString().trim()).filter(Boolean))].sort();
+  const panel = document.getElementById('vendorDropdownPanel');
+  panel.innerHTML = '';
+  values.forEach(v => {
+    const label = document.createElement('label');
+    label.className = 'dropdown-checkbox-item';
+    const input = document.createElement('input');
+    input.type = 'checkbox';
+    input.checked = vendorFilterValues.has(v);
+    input.addEventListener('change', () => {
+      if (input.checked) vendorFilterValues.add(v); else vendorFilterValues.delete(v);
+      updateVendorDropdownLabel();
+      render();
+    });
+    label.appendChild(input);
+    const span = document.createElement('span'); span.textContent = v;
+    label.appendChild(span);
+    panel.appendChild(label);
+  });
+  updateVendorDropdownLabel();
+}
+function updateVendorDropdownLabel(){
+  const label = document.getElementById('vendorDropdownLabel');
+  if (vendorFilterValues.size === 0) label.textContent = 'All vendors';
+  else if (vendorFilterValues.size === 1) label.textContent = [...vendorFilterValues][0];
+  else label.textContent = vendorFilterValues.size + ' vendors selected';
+}
 }
 function computeColumnRoles(){
   const tableHeaders = headers.filter(h => !TABLE_EXCLUDE_PATTERNS.some(p => p.test(h)));
@@ -700,6 +754,8 @@ function computeColumnRoles(){
   primaryCols = scored.slice(0, MAX_TABLE_COLUMNS).map(s => s.h);
   if (!primaryCols.length) primaryCols = tableHeaders.slice(0, MAX_TABLE_COLUMNS);
   if (assignedLifeCol || actualLifeCol) primaryCols.push(LIFE_COL_KEY);
+  if (findCol(/^vendor$/i)) primaryCols.push(findCol(/^vendor$/i));
+}
 }
 function buildFilterUI(){
   els.filters.innerHTML = '';
@@ -854,6 +910,8 @@ function getFiltered(){
   let out = rows;
   Object.entries(filters).forEach(([col, set]) => { if (set.size > 0) out = out.filter(r => set.has((r[col]||'').toString().trim())); });
   if (riskFilterValues.size > 0 && riskCol) out = out.filter(r => riskFilterValues.has(normalizeKey(r[riskCol])));
+  const vendorCol = findCol(/^vendor$/i);
+  if (vendorFilterValues.size > 0 && vendorCol) out = out.filter(r => vendorFilterValues.has((r[vendorCol]||'').toString().trim()));
   out = out.filter(r => {
     if (r._ageYears === null || r._ageYears === undefined) return includeUnknownAge;
     return r._ageYears >= ageMin && r._ageYears <= ageMax;
@@ -1005,6 +1063,17 @@ document.addEventListener('DOMContentLoaded', () => {
     const body = document.getElementById('exportBody');
     body.classList.toggle('open');
     document.getElementById('exportCaret').innerHTML = body.classList.contains('open') ? '&#9662;' : '&#9656;';
+  });
+  document.getElementById('vendorDropdownBtn').addEventListener('click', (e) => {
+  e.stopPropagation();
+  document.getElementById('vendorDropdownPanel').classList.toggle('hidden');
+  });
+  document.addEventListener('click', (e) => {
+    const panel = document.getElementById('vendorDropdownPanel');
+    const btn = document.getElementById('vendorDropdownBtn');
+    if (panel && !panel.classList.contains('hidden') && !panel.contains(e.target) && e.target !== btn) {
+      panel.classList.add('hidden');
+    }
   });
   document.getElementById('exportSelectAll').addEventListener('click', () => {
     headers.forEach(h => exportFieldState[h] = true);

@@ -710,6 +710,7 @@ function buildRiskFilterUI(){
     chip.addEventListener('click', () => { if (riskFilterValues.has(key)) riskFilterValues.delete(key); else riskFilterValues.add(key); buildRiskFilterUI(); render(); });
     els.riskChipRow.appendChild(chip);
   });
+}
 function buildVendorDropdown(){
   const vendorCol = findCol(/^vendor$/i);
   const block = document.getElementById('vendorBlock');

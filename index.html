@@ -742,7 +742,6 @@ function updateVendorDropdownLabel(){
   else if (vendorFilterValues.size === 1) label.textContent = [...vendorFilterValues][0];
   else label.textContent = vendorFilterValues.size + ' vendors selected';
 }
-
 function computeColumnRoles(){
   const tableHeaders = headers.filter(h => !TABLE_EXCLUDE_PATTERNS.some(p => p.test(h)));
   categoricalCols = headers.filter(h => FILTER_ALLOWED_PATTERNS.some(p => p.test(h)));
